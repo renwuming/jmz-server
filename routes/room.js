@@ -26,14 +26,9 @@ router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     const roomData = ctx.state.room
     const { userList } = roomData
-    let inRoom = false
-    userList.forEach(user => {
-        if (user.id.toString() == _id) {
-            inRoom = true
-        }
-    })
+    const ownRoom = userList[0].id.toString() == _id
 
-    if (inRoom && userList.length >= 4) {
+    if (ownRoom && userList.length >= 4) {
         const gameData = await GameRouter.gameInit(userList.slice(0, 4))
         const game = await Games.create(gameData)
         const newGameId = game._id
@@ -50,7 +45,7 @@ router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
     } else {
         ctx.body = {
             code: 501,
-            error: '你不在房间 or 人数不足',
+            error: '你不是房主 or 人数不足',
         }
     }
 })
@@ -89,10 +84,14 @@ router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
 router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     let roomData = ctx.state.room
+    const { userList, activeGame } = roomData
+    const ownRoom = userList[0].id.toString() == _id
 
     if (roomData) {
         ctx.body = {
             userList: roomData.userList,
+            ownRoom,
+            activeGame,
         }
     } else {
         ctx.body = {
