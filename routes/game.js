@@ -12,7 +12,8 @@ async function getGame(ctx, next) {
         })
         ctx.state.game = game.toObject()
         await next()
-    } catch(e) {
+    } catch (e) {
+        console.log(e.toString())
         ctx.body = {
             code: 500,
         }
@@ -24,30 +25,38 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     const game = ctx.state.game
     const userList = game.userList.map(item => item.id.toString())
     let index = userList.indexOf(_id.toString())
-    // index = 3 // todo 测试修改
+    // index = 2 // todo 测试修改
 
     if (index >= 0) {
         const teamIndex = Math.floor(index / 2)
         const { activeBattle } = game
         const battle = game.battles[activeBattle]
         const { desTeam, desUser, codes, question, answerE, answerF } = battle
+        questionStrList = question ? question.map(str => str.replace(/\n/g, '')) : null
         const desIndex = desTeam * 2 + desUser
         const battleData = {
             desTeam,
             desUser,
-            question,
+            question: questionStrList,
             answerE: !!answerE,
             answerF: !!answerF,
         }
         if (index === desIndex) {
             battleData.codes = codes
         }
+        const history = await getGameHistory(game)
+        const gameResult = handleSum(history)
+
         ctx.body = {
             userIndex: index,
             userList: game.userList,
             teamWords: game.teams[teamIndex].words,
             battle: battleData,
-            history: await getGameHistory(game),
+            history,
+            sumList: gameResult.sumList,
+            gameOver: gameResult.gameOver,
+            winner: gameResult.winner,
+            activeBattle,
         }
     } else {
         ctx.body = {
@@ -57,9 +66,67 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     }
 })
 
+function handleSum(historylist) {
+    const resultMap = [ // 统计两队的得分情况
+        {
+            red: 0,
+            black: 0,
+            sum: 0,
+        },
+        {
+            red: 0,
+            black: 0,
+            sum: 0,
+        },
+    ]
+    historylist.forEach(round => {
+        const { desTeam } = round
+        if (round.red) {
+            resultMap[1 - desTeam].red++
+            resultMap[1 - desTeam].sum++
+        }
+        if (round.black) {
+            resultMap[desTeam].black++
+            resultMap[desTeam].sum--
+        }
+    })
+    let winner
+    let gameOver
+    let winNum = 0
+    let winFlag = false
+    if (resultMap[0].black >= 2 || resultMap[1].red >= 2) {
+        winFlag = true
+        winNum++
+    }
+    if (resultMap[1].black >= 2 || resultMap[0].red >= 2) {
+        winFlag = true
+        winNum--
+    }
+    if (winFlag) {
+        gameOver = true
+        if (winNum > 0) winner = 1
+        else if (winNum < 0) winner = 0
+        else {
+            if (resultMap[0].sum === resultMap[1].sum) winner = -1
+            else winner = resultMap[0].sum > resultMap[1].sum ? 0 : 1
+        }
+    }
+
+    return {
+        gameOver,
+        winner,
+        sumList: resultMap.map(r => r.sum),
+    }
+}
+
 async function getGameHistory(gameData) {
     const { battles } = gameData
-    const list = battles.slice(0, -1)
+    const L = battles.length
+    let sliceNum = -2
+    if (L % 2) {
+        sliceNum = -1
+    }
+    const list = battles.slice(0, sliceNum)
     return list
 }
 
@@ -76,6 +143,12 @@ router.post('/:id/submit', sessionUser, getGame, async (ctx, next) => {
         battle[type] = code
         game.battles[activeBattle] = battle
         if (battle.question && battle.answerF && battle.answerE) {
+            const codeF = battle.answerF.join('')
+            const codeE = battle.answerE.join('')
+            const codeStr = battle.codes.join('')
+            if (codeF !== codeStr) battle.black = true
+            if (codeE === codeStr) battle.red = true
+            game.battles[activeBattle] = battle
             game.battles.push(createBattle(activeBattle))
             activeBattle++
         }
@@ -159,13 +232,17 @@ function getCodes() {
 async function getWords() {
     const words = [
         '铁拐李',
-        '汉钟离',
-        '蓝采和',
         '何仙姑',
         '张果老',
         '吕洞宾',
-        '曹国舅',
-        '韩湘子',
+        '魔鬼',
+        '图书',
+        '零度',
+        '冰',
+        '电视',
+        '互联网',
+        '大海',
+        '天空',
     ].shuffle()
 
     return [

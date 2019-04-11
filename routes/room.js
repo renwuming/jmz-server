@@ -15,6 +15,7 @@ async function getRoom(ctx, next) {
         ctx.state.room = room.toObject()
         await next()
     } catch (e) {
+        console.log(e.toString())
         ctx.body = {
             code: 500,
         }
@@ -62,7 +63,6 @@ router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
                 flag = false
             }
         })
-        // todo 测试阶段，可以有重复的人
         if (flag) {
             roomData.userList.push({
                 id: _id,
@@ -85,13 +85,14 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     let roomData = ctx.state.room
     const { userList, activeGame } = roomData
-    const ownRoom = userList[0].id.toString() == _id
-
     if (roomData) {
+        const ownRoom = userList[0].id.toString() == _id
+        const inRoom = userList.map(user => user.id.toString()).includes(_id.toString())
         ctx.body = {
             userList: roomData.userList,
             ownRoom,
             activeGame,
+            inRoom,
         }
     } else {
         ctx.body = {
@@ -100,7 +101,7 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
     }
 })
 
-
+// 创建房间
 router.post('/', sessionUser, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     let room = await Rooms.create({
