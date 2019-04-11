@@ -1,6 +1,7 @@
 const router = require('koa-router')()
 const Games = require('../models/game')
 const { sessionUser } = require('./middleware')
+const dictionary = require('./code')
 
 router.prefix('/games')
 
@@ -242,24 +243,10 @@ function getCodes() {
 }
 
 async function getWords() {
-    const words = [
-        '铁拐李',
-        '何仙姑',
-        '张果老',
-        '吕洞宾',
-        '魔鬼',
-        '图书',
-        '零度',
-        '冰',
-        '电视',
-        '互联网',
-        '大海',
-        '天空',
-    ].shuffle()
-
+    const words = dictionary.shuffle()
     return [
         words.slice(0, 4),
-        words.slice(4, 8),
+        words.slice(-4),
     ]
 
 }
@@ -268,5 +255,5 @@ Array.prototype.shuffle = function () {
     return this.sort(_ => Math.random() - .5)
 }
 
-
 module.exports = router
+
