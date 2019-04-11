@@ -25,52 +25,49 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     const game = ctx.state.game
     const userList = game.userList.map(item => item.id.toString())
     let index = userList.indexOf(_id.toString())
-    // index = 0 // todo 测试修改
+    // index = 1 // todo 测试修改
+
+    const { activeBattle, teams } = game
+    const battle = game.battles[activeBattle]
+    const { desTeam, desUser, codes, question, answerE, answerF } = battle
+    questionStrList = question ? question.map(str => str.replace(/\n/g, '')) : null
+    const desIndex = desTeam * 2 + desUser
+    const battleData = {
+        desTeam,
+        desUser,
+        question: questionStrList,
+        answerE: !!answerE,
+        answerF: !!answerF,
+    }
+    if (index === desIndex) {
+        battleData.codes = codes
+    }
+    const history = await getGameHistory(game)
+    const gameResult = handleSum(history)
+    const teamNames = teams.map(t => t.name)
+    const { sumList, gameOver, winner } = gameResult
+    const bodyData = {
+        userIndex: index,
+        userList: game.userList,
+        teamNames,
+        battle: battleData,
+        history,
+        sumList: sumList,
+        gameOver: gameOver,
+        winner: winner,
+        activeBattle,
+    }
+    if (gameOver) {
+        bodyData.enemyWords = teams[1 - teamIndex].words
+    }
 
     if (index >= 0) {
         const teamIndex = Math.floor(index / 2)
-        const { activeBattle, teams } = game
-        const battle = game.battles[activeBattle]
-        const { desTeam, desUser, codes, question, answerE, answerF } = battle
-        questionStrList = question ? question.map(str => str.replace(/\n/g, '')) : null
-        const desIndex = desTeam * 2 + desUser
-        const battleData = {
-            desTeam,
-            desUser,
-            question: questionStrList,
-            answerE: !!answerE,
-            answerF: !!answerF,
-        }
-        if (index === desIndex) {
-            battleData.codes = codes
-        }
-        const history = await getGameHistory(game)
-        const gameResult = handleSum(history)
         const teamWords = teams[teamIndex].words
-        const teamNames = teams.map(t => t.name)
-        const { sumList, gameOver, winner } = gameResult
-        const bodyData = {
-            userIndex: index,
-            userList: game.userList,
-            teamWords,
-            teamNames,
-            battle: battleData,
-            history,
-            sumList: sumList,
-            gameOver: gameOver,
-            winner: winner,
-            activeBattle,
-        }
-        if (gameOver) {
-            bodyData.enemyWords = teams[1 - teamIndex].words
-        }
-
+        bodyData.teamWords = teamWords
         ctx.body = bodyData
     } else {
-        ctx.body = {
-            code: 501,
-            error: '你不在游戏中',
-        }
+        ctx.body = bodyData
     }
 })
 
