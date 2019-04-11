@@ -24,8 +24,6 @@ global.db = mongoose.connection;
 app.use(cors({
   origin: function (ctx) {
     return ctx.request.header.origin
-    // console.log(ctx.request.header.origin)
-    return 'http://localhost:7456' // todo
   },
   maxAge: 5,
   credentials: true,

@@ -25,11 +25,11 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     const game = ctx.state.game
     const userList = game.userList.map(item => item.id.toString())
     let index = userList.indexOf(_id.toString())
-    // index = 2 // todo 测试修改
+    // index = 0 // todo 测试修改
 
     if (index >= 0) {
         const teamIndex = Math.floor(index / 2)
-        const { activeBattle } = game
+        const { activeBattle, teams } = game
         const battle = game.battles[activeBattle]
         const { desTeam, desUser, codes, question, answerE, answerF } = battle
         questionStrList = question ? question.map(str => str.replace(/\n/g, '')) : null
@@ -46,18 +46,26 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
         }
         const history = await getGameHistory(game)
         const gameResult = handleSum(history)
-
-        ctx.body = {
+        const teamWords = teams[teamIndex].words
+        const teamNames = teams.map(t => t.name)
+        const { sumList, gameOver, winner } = gameResult
+        const bodyData = {
             userIndex: index,
             userList: game.userList,
-            teamWords: game.teams[teamIndex].words,
+            teamWords,
+            teamNames,
             battle: battleData,
             history,
-            sumList: gameResult.sumList,
-            gameOver: gameResult.gameOver,
-            winner: gameResult.winner,
+            sumList: sumList,
+            gameOver: gameOver,
+            winner: winner,
             activeBattle,
         }
+        if (gameOver) {
+            bodyData.enemyWords = teams[1 - teamIndex].words
+        }
+
+        ctx.body = bodyData
     } else {
         ctx.body = {
             code: 501,
@@ -192,15 +200,18 @@ function getAnswerUsers(battle, game) {
 
 router.gameInit = async function (userList) {
     userList.shuffle()
+    const [team0, team1] = getTeamNames()
     const [words0, words1] = await getWords()
     const data = {
         userList,
         teams: [
             {
+                name: team0,
                 userList: userList.slice(0, 2),
                 words: words0,
             },
             {
+                name: team1,
                 userList: userList.slice(2, 4),
                 words: words1,
             }
@@ -211,6 +222,10 @@ router.gameInit = async function (userList) {
         activeBattle: 0,
     }
     return data
+}
+
+function getTeamNames() {
+    return ['马里奥', '酷霸王']
 }
 
 function createBattle(lastBattle) {
