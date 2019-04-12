@@ -15,8 +15,13 @@ async function getGame(ctx, next) {
         await next()
     } catch (e) {
         console.log(e.toString())
+        let error
+        if(!ctx.state.game) {
+            error = '游戏ID不存在！'
+        }
         ctx.body = {
             code: 500,
+            error,
         }
     }
 }
@@ -188,7 +193,7 @@ function getAnswerUsers(battle, game) {
         list[id] = 'answerF'
     }
     if (!battle.answerE) {
-        const { id } = game.teams[1 - desTeam].userList[desUser]
+        const { id } = game.teams[1 - desTeam].userList[1 - desUser]
         list[id] = 'answerE'
     }
 
