@@ -47,6 +47,7 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     const gameResult = handleSum(history)
     const teamNames = teams.map(t => t.name)
     const { sumList, gameOver, winner } = gameResult
+    const teamIndex = Math.floor(index / 2)
     const bodyData = {
         userIndex: index,
         userList: game.userList,
@@ -63,7 +64,6 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     }
 
     if (index >= 0) {
-        const teamIndex = Math.floor(index / 2)
         const teamWords = teams[teamIndex].words
         bodyData.teamWords = teamWords
         ctx.body = bodyData
