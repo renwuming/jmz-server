@@ -16,7 +16,7 @@ async function getGame(ctx, next) {
     } catch (e) {
         console.log(e.toString())
         let error
-        if(!ctx.state.game) {
+        if (!ctx.state.game) {
             error = '游戏ID不存在！'
         }
         ctx.body = {
@@ -64,15 +64,18 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
         winner: winner,
         activeBattle,
     }
-    if (gameOver) {
-        bodyData.enemyWords = teams[1 - teamIndex].words
-    }
 
     if (index >= 0) {
+        if (gameOver) {
+            bodyData.enemyWords = teams[1 - teamIndex].words
+        }
         const teamWords = teams[teamIndex].words
         bodyData.teamWords = teamWords
         ctx.body = bodyData
     } else {
+        if (gameOver) {
+            bodyData.allWords = teams.map(t => t.words)
+        }
         ctx.body = bodyData
     }
 })
