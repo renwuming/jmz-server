@@ -73,7 +73,7 @@ router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
                 _id: roomData._id,
             }, roomData)
         }
-        ctx.body = await handleData(roomData)
+        ctx.body = null
     } else {
         ctx.body = {
             code: 500,
@@ -111,12 +111,15 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
     if (roomData) {
         const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
         const ownRoom = roomOwnerID == _id
-        const inRoom = userList.map(user => user.id.toString()).includes(_id.toString())
+        const roomIndex = userList.map(user => user.id.toString()).indexOf(_id.toString())
+        const inRoom = roomIndex >= 0
+        const inGame = inRoom && roomIndex < 4
         ctx.body = {
             userList: roomData.userList,
             ownRoom,
             activeGame,
             inRoom,
+            inGame,
         }
     } else {
         ctx.body = {
