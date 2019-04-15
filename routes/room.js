@@ -80,6 +80,29 @@ router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
     }
 })
 
+// 退出房间
+router.post('/:id/quit', sessionUser, getRoom, async (ctx, next) => {
+    const { _id, nick } = ctx.state.user
+    let roomData = ctx.state.room
+
+    if (roomData) {
+        const userList = roomData.userList.map(user => user.id.toString())
+        const userIndex = userList.indexOf(_id.toString())
+        if (userIndex >= 0) {
+            userList.splice(userIndex, 1)
+            roomData.userList = userList
+            await Rooms.updateOne({
+                _id: roomData._id,
+            }, roomData)
+        }
+        ctx.body = null
+    } else {
+        ctx.body = {
+            code: 500,
+        }
+    }
+})
+
 // 获取房间数据
 router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
