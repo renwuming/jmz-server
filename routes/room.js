@@ -89,8 +89,7 @@ router.post('/:id/quit', sessionUser, getRoom, async (ctx, next) => {
         const userList = roomData.userList.map(user => user.id.toString())
         const userIndex = userList.indexOf(_id.toString())
         if (userIndex >= 0) {
-            userList.splice(userIndex, 1)
-            roomData.userList = userList
+            roomData.userList.splice(userIndex, 1)
             await Rooms.updateOne({
                 _id: roomData._id,
             }, roomData)
