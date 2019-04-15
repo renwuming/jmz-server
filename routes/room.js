@@ -27,7 +27,7 @@ router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     const roomData = ctx.state.room
     const { userList } = roomData
-    const ownRoom = userList[0].id.toString() == _id
+    const ownRoom = (userList[0].id || {}).toString() == _id
 
     if (ownRoom && userList.length >= 4) {
         const gameData = await GameRouter.gameInit(userList.slice(0, 4))
@@ -108,7 +108,7 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
     let roomData = ctx.state.room
     const { userList, activeGame } = roomData
     if (roomData) {
-        const ownRoom = userList[0].id.toString() == _id
+        const ownRoom = (userList[0].id || {}).toString() == _id
         const inRoom = userList.map(user => user.id.toString()).includes(_id.toString())
         ctx.body = {
             userList: roomData.userList,
