@@ -31,7 +31,7 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     const game = ctx.state.game
     const userList = game.userList.map(item => item.id.toString())
     let index = userList.indexOf(_id.toString())
-    // index = 1 // todo 测试修改
+    // index = 2 // todo 测试修改
 
     const { activeBattle, teams } = game
     const battle = game.battles[activeBattle]
@@ -156,7 +156,15 @@ router.post('/:id/submit', sessionUser, getGame, async (ctx, next) => {
     if (type) {
         battle[type] = code
         game.battles[activeBattle] = battle
-        if (battle.question && battle.answerF && battle.answerE) {
+        if (activeBattle <= 1 && battle.question && battle.answerF) { // 若为前两轮，只需要队友解密
+            delete battle.answerE
+            const codeF = battle.answerF.join('')
+            const codeStr = battle.codes.join('')
+            if (codeF !== codeStr) battle.black = true
+            game.battles[activeBattle] = battle
+            game.battles.push(createBattle(activeBattle))
+            activeBattle++
+        } else if (battle.question && battle.answerF && battle.answerE) {
             const codeF = battle.answerF.join('')
             const codeE = battle.answerE.join('')
             const codeStr = battle.codes.join('')
@@ -185,6 +193,7 @@ router.post('/:id/submit', sessionUser, getGame, async (ctx, next) => {
 
 function getAnswerUsers(battle, game) {
     const list = {}
+    const { activeBattle } = game
     const { desTeam, desUser } = battle
     if (!battle.question) {
         const { id } = game.teams[desTeam].userList[desUser]
@@ -195,7 +204,7 @@ function getAnswerUsers(battle, game) {
         const { id } = game.teams[desTeam].userList[1 - desUser]
         list[id] = 'answerF'
     }
-    if (!battle.answerE) {
+    if (activeBattle > 1 && !battle.answerE) {
         const { id } = game.teams[1 - desTeam].userList[1 - desUser]
         list[id] = 'answerE'
     }
