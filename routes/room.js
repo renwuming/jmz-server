@@ -132,6 +132,7 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
 router.post('/', sessionUser, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     let room = await Rooms.create({
+        timeStamp: +new Date(),
         userList: [{
             id: _id,
             nick,
@@ -143,11 +144,40 @@ router.post('/', sessionUser, async (ctx, next) => {
     }
 })
 
-async function handleData(data) {
-    if (data.toObject) {
-        data = data.toObject()
+
+
+// 获取房间列表 - 近一天的活跃房间
+const DAY = 24 * 3600 * 1000
+router.get('/', sessionUser, async (ctx, next) => {
+    const now = +new Date()
+    let roomList = await Rooms.find({
+        timeStamp: {
+            $gt: now - DAY,
+        },
+    })
+
+    roomList = await handleData(roomList)
+
+    ctx.body = roomList
+})
+
+async function handleData(list) {
+    const L = list.length,
+    resList = []
+    for (let i = 0; i < L; i++) {
+        const room = list[i]
+        if (room.activeGame) {
+            const game = await Games.findOne({
+                _id: room.activeGame,
+            })
+            if(!game.over) {
+                resList.push(room)
+            }
+        } else {
+            resList.push(room)
+        }
     }
-    return data
+    return resList
 }
 
 

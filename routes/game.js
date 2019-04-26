@@ -33,7 +33,7 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     let index = userList.indexOf(_id.toString())
     // index = 2 // todo 测试修改
 
-    const { activeBattle, teams } = game
+    const { activeBattle, teams, over } = game
     const battle = game.battles[activeBattle]
     const { desTeam, desUser, codes, question, answerE, answerF } = battle
     questionStrList = question ? question.map(str => str.replace(/\n/g, '')) : null
@@ -52,6 +52,13 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     const gameResult = handleSum(history)
     const teamNames = teams.map(t => t.name)
     const { sumList, gameOver, winner } = gameResult
+    if (gameOver && !over) { // 若游戏已结束，更新数据库
+        await Games.findOneAndUpdate({
+            _id: game._id,
+        }, {
+                over: gameOver,
+            })
+    }
     const teamIndex = Math.floor(index / 2)
     const bodyData = {
         userIndex: index,
