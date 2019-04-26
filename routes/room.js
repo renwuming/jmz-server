@@ -166,6 +166,7 @@ async function handleData(list) {
     resList = []
     for (let i = 0; i < L; i++) {
         const room = list[i]
+        if(room.userList.length < 1) continue
         if (room.activeGame) {
             const game = await Games.findOne({
                 _id: room.activeGame,
