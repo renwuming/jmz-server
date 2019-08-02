@@ -130,7 +130,7 @@ router.post('/:id/stop', sessionUser, getRoom, async ctx => {
         await Rooms.updateOne({
             _id: roomData._id,
         }, roomData)
-        ctx.body = null
+        ctx.body = {}
     } else {
         ctx.body = {
             code: 500,
