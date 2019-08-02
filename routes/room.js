@@ -26,12 +26,12 @@ async function getRoom(ctx, next) {
 router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
     const { _id } = ctx.state.user
     const roomData = ctx.state.room
-    const { userList } = roomData
+    const { userList, mode } = roomData
     const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
     const ownRoom = roomOwnerID == _id
 
     if (ownRoom && userList.length >= 4) {
-        const gameData = await GameRouter.gameInit(userList.slice(0, 4))
+        const gameData = await GameRouter.gameInit(userList.slice(0, 4), mode)
         const game = await Games.create(gameData)
         const newGameId = game._id
         await Rooms.findOneAndUpdate({
@@ -91,7 +91,7 @@ router.post('/:id/userList', sessionUser, getRoom, async ctx => {
         await Rooms.updateOne({
             _id: roomData._id,
         }, roomData)
-        ctx.body = null
+        ctx.body = {}
     } else {
         ctx.body = {
             code: 500,
@@ -145,7 +145,7 @@ router.post('/:id/quit', sessionUser, getRoom, async (ctx, next) => {
 router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     let roomData = ctx.state.room
-    const { userList, activeGame } = roomData
+    const { userList, activeGame, mode } = roomData
     if (roomData) {
         const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
         const ownRoom = roomOwnerID == _id
@@ -158,6 +158,7 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
             activeGame,
             inRoom,
             inGame,
+            mode,
         }
     } else {
         ctx.body = {
@@ -175,6 +176,7 @@ router.post('/', sessionUser, async (ctx, next) => {
             id: _id,
             nick,
         }],
+        mode: false,
     })
 
     ctx.body = {

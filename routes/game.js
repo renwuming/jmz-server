@@ -220,8 +220,11 @@ function getAnswerUsers(battle, game) {
 }
 
 
-router.gameInit = async function (userList) {
-    userList.shuffle()
+router.gameInit = async function (userList, mode) {
+    // 在随机模式下，将玩家列表打乱顺序
+    if(!mode) {
+        userList.shuffle()
+    }
     const [team0, team1] = getTeamNames()
     const [words0, words1] = await getWords()
     const data = {
