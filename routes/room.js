@@ -119,6 +119,25 @@ router.post('/:id/mode', sessionUser, getRoom, async ctx => {
     }
 })
 
+// 停止房间当前游戏
+// todo 验证是否为房主
+router.post('/:id/stop', sessionUser, getRoom, async ctx => {
+    let roomData = ctx.state.room
+    if (roomData) {
+        roomData.gameHistory = roomData.gameHistory || []
+        roomData.gameHistory.push(roomData.activeGame)
+        roomData.activeGame = null
+        await Rooms.updateOne({
+            _id: roomData._id,
+        }, roomData)
+        ctx.body = null
+    } else {
+        ctx.body = {
+            code: 500,
+        }
+    }
+})
+
 // 退出房间
 router.post('/:id/quit', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
@@ -177,6 +196,7 @@ router.post('/', sessionUser, async (ctx, next) => {
             nick,
         }],
         mode: false,
+        gameHistory: [],
     })
 
     ctx.body = {

@@ -7,6 +7,7 @@ var productionSchema = new Schema({
   userList: Array,
   timeStamp: Number,
   mode: Boolean,
+  gameHistory: Array,
 })
 
 module.exports = mongoose.model('room',productionSchema)
