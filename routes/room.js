@@ -24,7 +24,7 @@ async function getRoom(ctx, next) {
 
 // 开始某房间的游戏
 router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
-    const { _id, nick } = ctx.state.user
+    const { _id } = ctx.state.user
     const roomData = ctx.state.room
     const { userList } = roomData
     const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
@@ -74,6 +74,44 @@ router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
             }, roomData)
         }
         ctx.body = null
+    } else {
+        ctx.body = {
+            code: 500,
+        }
+    }
+})
+
+// 修改房间里玩家顺序
+// todo 验证是否为房主
+router.post('/:id/userList', sessionUser, getRoom, async ctx => {
+    const { userList } = ctx.request.body
+    let roomData = ctx.state.room
+    if (roomData) {
+        roomData.userList = userList
+        await Rooms.updateOne({
+            _id: roomData._id,
+        }, roomData)
+        ctx.body = null
+    } else {
+        ctx.body = {
+            code: 500,
+        }
+    }
+})
+
+// 修改房间的游戏模式
+// todo 验证是否为房主
+router.post('/:id/mode', sessionUser, getRoom, async ctx => {
+    const { mode } = ctx.request.body
+    let roomData = ctx.state.room
+    if (roomData) {
+        roomData.mode = mode
+        await Rooms.updateOne({
+            _id: roomData._id,
+        }, roomData)
+        ctx.body = {
+            mode,
+        }
     } else {
         ctx.body = {
             code: 500,
