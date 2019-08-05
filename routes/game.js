@@ -249,6 +249,14 @@ router.gameInit = async function (userList, mode) {
     return data
 }
 
+router.stopGame = async function (id) {
+    await Games.update({
+        _id: id,
+    }, {
+        over: true,
+    })
+}
+
 function getTeamNames() {
     return ['马里奥', '酷霸王']
 }
