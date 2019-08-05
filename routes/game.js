@@ -27,7 +27,7 @@ async function getGame(ctx, next) {
 }
 
 router.get('/:id', sessionUser, getGame, async (ctx, next) => {
-    const { _id, nick } = ctx.state.user
+    const { _id } = ctx.state.user
     const game = ctx.state.game
     const userList = game.userList.map(item => item.id.toString())
     let index = userList.indexOf(_id.toString())
@@ -51,7 +51,7 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
     const history = await getGameHistory(game)
     const gameResult = handleSum(history)
     const teamNames = teams.map(t => t.name)
-    const { sumList, gameOver, winner } = gameResult
+    let { sumList, gameOver, winner } = gameResult
     if (gameOver && !over) { // 若游戏已结束，更新数据库
         await Games.findOneAndUpdate({
             _id: game._id,
