@@ -59,6 +59,7 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
                 over: gameOver,
             })
     }
+    if(over) gameOver = true // 非正常情况，游戏被房主终止
     const teamIndex = Math.floor(index / 2)
     const bodyData = {
         userIndex: index,
