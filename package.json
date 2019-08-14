@@ -22,7 +22,10 @@
     "koa-views": "^5.2.1",
     "koa2-cors": "^2.0.6",
     "mongoose": "^5.4.22",
-    "pug": "^2.0.0-rc.1"
+    "node-cache": "^4.2.1",
+    "pug": "^2.0.0-rc.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
   },
   "devDependencies": {
     "nodemon": "^1.8.1"

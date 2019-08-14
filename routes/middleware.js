@@ -1,12 +1,28 @@
 
+const getCache = require('./cache')
 const Users = require('../models/user')
 
 const sessionUser = async function (ctx, next) {
-    const { nick, secret } = ctx.session
-    let user = await Users.findOne({
-        nick,
-        secret,
-    })
+    const { sessionid } = ctx.request.header
+    let user
+
+    // 微信登录
+    if(sessionid) {
+        const openData = getCache().get(sessionid) || {}
+        const { openid } = openData
+        if(!openid) user = null
+        else {
+            user = await Users.findOne({
+                openid,
+            })
+        }
+    } else { // 用户名登录
+        const { nick, secret } = ctx.session
+        user = await Users.findOne({
+            nick,
+            secret,
+        })
+    }
 
     if (user) {
         ctx.state.user = user.toObject()

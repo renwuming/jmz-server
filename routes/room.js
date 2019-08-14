@@ -47,16 +47,15 @@ router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
     } else {
         ctx.body = {
             code: 501,
-            error: '你不是房主 or 人数不足',
+            error: '人数不足',
         }
     }
 })
 
 // 加入房间
 router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
-    const { _id, nick } = ctx.state.user
+    const { _id, nick, userInfo } = ctx.state.user
     let roomData = ctx.state.room
-
     if (roomData) {
         let flag = true // 是否需要插入user数据
         roomData.userList.forEach(user => {
@@ -68,6 +67,7 @@ router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
             roomData.userList.push({
                 id: _id,
                 nick,
+                userInfo,
             })
             await Rooms.updateOne({
                 _id: roomData._id,
@@ -194,12 +194,13 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
 
 // 创建房间
 router.post('/', sessionUser, async (ctx, next) => {
-    const { _id, nick } = ctx.state.user
+    const { _id, nick, userInfo } = ctx.state.user
     let room = await Rooms.create({
         timeStamp: +new Date(),
         userList: [{
             id: _id,
             nick,
+            userInfo,
         }],
         mode: false,
         gameHistory: [],

@@ -1,3 +1,5 @@
+routes/config
+
 node_modules
 
 .vscode/*

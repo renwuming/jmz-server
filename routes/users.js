@@ -41,7 +41,8 @@ function handleUserObject(data) {
   if(data.toObject) {
     data = data.toObject()
   }
-  delete data.secret // 去掉secret字段
+  delete data.openid // 去掉openid
+  delete data.secret // 去掉secret
   delete data._id
   delete data.__v
   return data
