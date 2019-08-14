@@ -18,10 +18,13 @@ const sessionUser = async function (ctx, next) {
         }
     } else { // 用户名登录
         const { nick, secret } = ctx.session
-        user = await Users.findOne({
-            nick,
-            secret,
-        })
+        if(!nick || !secret) user = null
+        else {
+            user = await Users.findOne({
+                nick,
+                secret,
+            })
+        }
     }
 
     if (user) {
