@@ -125,9 +125,13 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
             battleData.type = '加密'
         }
     } else if (index === jiemiIndex) {
-        battleData.type = '解密'
+        if(question && !answerF) {
+            battleData.type = '解密'
+        }
     } else if (index === lanjieIndex) {
-        battleData.type = '拦截'
+        if(question && !answerE) {
+            battleData.type = '拦截'
+        }
     }
     const battleList = battleData.codes.map((code, index) => {
         return {
@@ -163,7 +167,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
         table: table1,
         tableEnemy: table2,
         sumList: sumList,
-        gameOver: gameOver,
+        gameOver: !!gameOver,
         winner: winner,
         roundNumber: activeBattle,
         type: battleData.type,
