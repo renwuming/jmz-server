@@ -94,8 +94,9 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
     const game = ctx.state.game
     const userList = game.userList.map(item => item.id.toString())
     let index = userList.indexOf(_id.toString())
-    const teamIndex = Math.floor(index / 2)
+    let teamIndex = Math.floor(index / 2)
     // index = 2 // todo 测试修改
+    // teamIndex = 1 // todo 测试修改
 
     const { activeBattle, teams, over } = game
     const battle = game.battles[activeBattle]
@@ -103,7 +104,10 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
     questionStrList = question ? question.map(str => str.replace(/\n/g, '')) : ['', '', '']
     const desIndex = desTeam * 2 + desUser
     const jiemiIndex = desIndex % 2 === 0 ? desIndex + 1 : desIndex - 1
-    const lanjieIndex = jiemiIndex >= 2 ? jiemiIndex - 2 : jiemiIndex + 2
+    let lanjieIndex = jiemiIndex >= 2 ? jiemiIndex - 2 : jiemiIndex + 2
+    if(activeBattle < 2) {
+        lanjieIndex = -1
+    }
     const actionPaperIndex = Math.abs(teamIndex - desTeam)
     // 处理battle数据
     const battleData = {
@@ -125,7 +129,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
     } else if (index === lanjieIndex) {
         battleData.type = '拦截'
     }
-    const battleList = codes.map((code, index) => {
+    const battleList = battleData.codes.map((code, index) => {
         return {
             question: questionStrList[index],
             code: code,
@@ -150,7 +154,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
     if(over) gameOver = true // 非正常情况，游戏被房主终止
     const bodyData = {
         userIndex: index,
-        userList: game.userList,
+        userList: game.userList.map(user=>user.userInfo),
         teamNames,
         battleData,
         battle: battleList,
@@ -166,7 +170,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
         enemyWords: ['??', '??', '??', '??'],
         desUser: game.userList[desIndex].userInfo,
         jiemiUser: game.userList[jiemiIndex].userInfo,
-        lanjieUser: game.userList[lanjieIndex].userInfo,
+        lanjieUser: game.userList[lanjieIndex] ? game.userList[lanjieIndex].userInfo : {},
         actionPaperIndex,
     }
 
