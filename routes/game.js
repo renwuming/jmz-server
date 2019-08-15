@@ -95,7 +95,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
     const userList = game.userList.map(item => item.id.toString())
     let index = userList.indexOf(_id.toString())
     const teamIndex = Math.floor(index / 2)
-    index = 2 // todo 测试修改
+    // index = 2 // todo 测试修改
 
     const { activeBattle, teams, over } = game
     const battle = game.battles[activeBattle]
@@ -104,6 +104,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
     const desIndex = desTeam * 2 + desUser
     const jiemiIndex = desIndex % 2 === 0 ? desIndex + 1 : desIndex - 1
     const lanjieIndex = jiemiIndex >= 2 ? jiemiIndex - 2 : jiemiIndex + 2
+    const actionPaperIndex = Math.abs(teamIndex - desTeam)
     // 处理battle数据
     const battleData = {
         desTeam,
@@ -166,6 +167,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
         desUser: game.userList[desIndex].userInfo,
         jiemiUser: game.userList[jiemiIndex].userInfo,
         lanjieUser: game.userList[lanjieIndex].userInfo,
+        actionPaperIndex,
     }
 
     if (index >= 0) {
