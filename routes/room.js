@@ -307,5 +307,39 @@ async function handleData(list) {
     return resList
 }
 
+// 小程序 - 获取我在的房间列表
+router.get('/list/wx', sessionUser, async (ctx, next) => {
+    const { user } = ctx.state
+    const { _id } = user
+    let roomList = await Rooms.find()
+
+    roomList = await handleDataWX(roomList, _id.toString())
+
+    ctx.body = roomList
+})
+
+async function handleDataWX(list, id) {
+    const L = list.length,
+    resList = []
+    for (let i = 0; i < L; i++) {
+        const room = list[i]
+        const { userList } = room
+        if(userList.length < 1) continue
+        if(!userList[0].userInfo) continue
+        // 若我不在房间里，则忽略
+        if(!userList.map(user=>user.id.toString()).includes(id)) continue
+        if (room.activeGame) {
+            const game = await Games.findOne({
+                _id: room.activeGame,
+            })
+            if(game.over) {
+                await stopRoomGame(room)
+            }
+        }
+        resList.push(room)
+    }
+    return resList
+}
+
 
 module.exports = router
