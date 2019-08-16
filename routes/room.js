@@ -192,6 +192,33 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
     }
 })
 
+// 小程序 - 获取房间数据
+router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
+    const { _id, nick } = ctx.state.user
+    let roomData = ctx.state.room
+    let { userList, activeGame, mode } = roomData
+    userList = userList.filter(user => user.userInfo)
+    if (roomData) {
+        const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
+        const ownRoom = roomOwnerID == _id
+        const roomIndex = userList.map(user => user.id.toString()).indexOf(_id.toString())
+        const inRoom = roomIndex >= 0
+        const inGame = inRoom && roomIndex < 4
+        ctx.body = {
+            userList: userList,
+            ownRoom,
+            activeGame,
+            inRoom,
+            inGame,
+            mode,
+        }
+    } else {
+        ctx.body = {
+            code: 500,
+        }
+    }
+})
+
 // 创建房间
 router.post('/', sessionUser, async (ctx, next) => {
     const { _id, nick, userInfo } = ctx.state.user
@@ -233,7 +260,9 @@ async function handleData(list) {
     resList = []
     for (let i = 0; i < L; i++) {
         const room = list[i]
-        if(room.userList.length < 1) continue
+        const { userList } = room
+        if(userList.length < 1) continue
+        if(userList[0].userInfo) continue
         if (room.activeGame) {
             const game = await Games.findOne({
                 _id: room.activeGame,
