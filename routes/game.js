@@ -95,6 +95,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
     const userList = game.userList.map(item => item.id.toString())
     let index = userList.indexOf(_id.toString())
     let teamIndex = Math.floor(index / 2)
+    if(teamIndex < 0) teamIndex = 0 // 此时为旁观者模式
     // index = 2 // todo 测试修改
     // teamIndex = 1 // todo 测试修改
 
@@ -181,7 +182,7 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
         lanjieStatus: !!answerE,
     }
 
-    if (index >= 0) {
+    if (index >= 0 || gameOver) {
         if (gameOver) {
             bodyData.enemyWords = teams[1 - teamIndex].words
         }
@@ -189,9 +190,8 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
         bodyData.teamWords = teamWords
         ctx.body = bodyData
     } else {
-        if (gameOver) {
-            bodyData.allWords = teams.map(t => t.words)
-        }
+        bodyData.teamWords = ['??', '??', '??', '??']
+        bodyData.observeMode = true
         ctx.body = bodyData
     }
 })
