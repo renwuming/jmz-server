@@ -264,7 +264,7 @@ function getWxGameHistory(list, teamIndex) {
     const history1 = []
     const history2 = []
     list.forEach((item, index) => {
-        const { codes, question, answerF } = item
+        const { codes, question, answerF, black, red } = item
         const historyItem = codes.map((code, index2) => {
             return {
                 question: question[index2],
@@ -274,10 +274,18 @@ function getWxGameHistory(list, teamIndex) {
         })
         // 我方历史回合
         if(index % 2 === teamIndex) {
-            history1.push(historyItem)
+            history1.push({
+                list: historyItem,
+                black,
+                red,
+            })
         } else {
             // 敌方历史回合
-            history2.push(historyItem)
+            history2.push({
+                list: historyItem,
+                black,
+                red,
+            })
         }
     })
     return [history1, history2]
@@ -290,7 +298,8 @@ function getHistoryTable(history) {
         [],
         [],
     ]
-    history.forEach(list => {
+    history.forEach(item => {
+        const { list } = item
         list.forEach(item => {
             const { code, question } = item
             table[code].push(question)
