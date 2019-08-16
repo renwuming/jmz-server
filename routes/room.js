@@ -52,6 +52,37 @@ router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
     }
 })
 
+// 小程序 - 开始某房间的游戏
+router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
+    const { _id } = ctx.state.user
+    const roomData = ctx.state.room
+    let { userList, mode } = roomData
+    userList = userList.filter(user => user.userInfo)
+    const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
+    const ownRoom = roomOwnerID == _id
+
+    if (ownRoom && userList.length >= 4) {
+        const gameData = await GameRouter.gameInit(userList.slice(0, 4), mode)
+        const game = await Games.create(gameData)
+        const newGameId = game._id
+        await Rooms.findOneAndUpdate({
+            _id: roomData._id,
+        }, {
+                $set: {
+                    activeGame: newGameId,
+                }
+            })
+        ctx.body = {
+            id: newGameId,
+        }
+    } else {
+        ctx.body = {
+            code: 501,
+            error: '人数不足',
+        }
+    }
+})
+
 // 加入房间
 router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick, userInfo } = ctx.state.user
