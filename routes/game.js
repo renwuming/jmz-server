@@ -176,6 +176,9 @@ router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
         jiemiUser: game.userList[jiemiIndex].userInfo,
         lanjieUser: game.userList[lanjieIndex] ? game.userList[lanjieIndex].userInfo : {},
         actionPaperIndex,
+        jiamiStatus: !!question,
+        jemiStatus: !!answerF,
+        lanjieStatus: !!answerE,
     }
 
     if (index >= 0) {
