@@ -3,6 +3,7 @@ const Games = require('../models/game')
 const Rooms = require('../models/room')
 const { sessionUser } = require('./middleware')
 const GameRouter = require('./game')
+const UserRouter = require('./users')
 
 router.prefix('/rooms')
 
@@ -228,7 +229,7 @@ router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     let roomData = ctx.state.room
     let { userList, activeGame, mode } = roomData
-    userList = userList.filter(user => user.userInfo)
+    userList = await updateAndHandleUserList(userList)
     if (roomData) {
         const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
         const ownRoom = roomOwnerID == _id
@@ -243,12 +244,29 @@ router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
             inGame,
             mode,
         }
+        await Rooms.findOneAndUpdate(roomData, {
+            userList,
+        })
     } else {
         ctx.body = {
             code: 500,
         }
     }
 })
+
+async function updateAndHandleUserList(list) {
+    const userList = []
+    for(let i=0, L=list.length; i<L; i++) {
+        let user = list[i]
+        if(user && user.userInfo) {
+            userList.push(user)
+        } else {
+            user = await UserRouter.getWxUser(user.id)
+            if(user) userList.push(user)
+        }
+    }
+    return userList
+}
 
 // 创建房间
 router.post('/', sessionUser, async (ctx, next) => {

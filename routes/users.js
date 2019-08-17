@@ -48,4 +48,18 @@ function handleUserObject(data) {
   return data
 }
 
+router.getWxUser = async id => {
+  const user = await Users.findOne({
+    _id: id,
+  })
+  if(user && user.userInfo) {
+    const newUser = handleUserObject(user)
+    newUser.id = id
+    return newUser
+  }
+  return null
+}
+
+
+
 module.exports = router

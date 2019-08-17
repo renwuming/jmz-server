@@ -359,7 +359,6 @@ router.post('/:id/submit', sessionUser, getGame, async (ctx, next) => {
 router.post('/wx/:id/submit', sessionUser, getGame, async (ctx, next) => {
     const { _id, nick } = ctx.state.user
     const { battle } = ctx.request.body
-    console.log(battle)
     const { game } = ctx.state
     let { activeBattle } = game
     
