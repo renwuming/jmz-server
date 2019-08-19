@@ -14,6 +14,7 @@ const users = require('./routes/users')
 const game = require('./routes/game')
 const room = require('./routes/room')
 const wxLogin = require('./routes/wxLogin')
+const mode = require('./routes/mode')
 
 
 global.mongoose = mongoose.connect('mongodb://localhost:27017/jmz', { useNewUrlParser: true });
@@ -65,6 +66,7 @@ app.use(users.routes(), users.allowedMethods())
 app.use(game.routes(), game.allowedMethods())
 app.use(room.routes(), room.allowedMethods())
 app.use(wxLogin.routes(), wxLogin.allowedMethods())
+app.use(mode.routes(), mode.allowedMethods())
 
 // error-handling
 app.on('error', (err, ctx) => {
