@@ -4,6 +4,7 @@ const Rooms = require('../models/room')
 const { sessionUser } = require('./middleware')
 const GameRouter = require('./game')
 const UserRouter = require('./users')
+const { mode } = require('./config')
 
 router.prefix('/rooms')
 
@@ -62,7 +63,9 @@ router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
     const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
     const ownRoom = roomOwnerID == _id
 
-    if (ownRoom && userList.length >= 4) {
+    const playerLimit = mode === 'game' ? 4 : 1
+
+    if (ownRoom && userList.length >= playerLimit) {
         const gameData = await GameRouter.gameInit(userList.slice(0, 4), mode)
         const game = await Games.create(gameData)
         const newGameId = game._id
@@ -200,7 +203,7 @@ router.post('/:id/quit', sessionUser, getRoom, async (ctx, next) => {
 
 // 获取房间数据
 router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
-    const { _id, nick } = ctx.state.user
+    const { _id } = ctx.state.user
     let roomData = ctx.state.room
     const { userList, activeGame, mode } = roomData
     if (roomData) {
@@ -226,7 +229,7 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
 
 // 小程序 - 获取房间数据
 router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
-    const { _id, nick } = ctx.state.user
+    const { _id } = ctx.state.user
     let roomData = ctx.state.room
     let { userList, activeGame, mode } = roomData
     userList = await updateAndHandleUserList(userList)

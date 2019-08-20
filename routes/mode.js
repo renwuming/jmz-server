@@ -1,11 +1,11 @@
 const router = require('koa-router')()
+const { mode } = require('./config')
 
 router.prefix('/mode')
 
 router.get('/', async function (ctx, next) {
   ctx.body = {
-    mode: 'tool', // 工具模式
-    // mode: 'game', // 游戏模式
+    mode,
   }
 })
 
