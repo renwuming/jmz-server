@@ -54,7 +54,18 @@ async function updateUserByOpenid(data) {
   if(!user) {
     await Users.create({
       openid,
+      userInfo: createDefaultUserInfo(openid),
     })
+  }
+}
+
+// 生成默认userInfo
+const defaultAvatarUrl = 'https://www.renwuming.cn/static/jmz/icon.png'
+function createDefaultUserInfo(openid) {
+  const nickID = openid.substr(-4)
+  return {
+    nickName: `玩家${nickID}`,
+    avatarUrl: defaultAvatarUrl,
   }
 }
 
