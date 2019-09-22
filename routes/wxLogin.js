@@ -60,7 +60,7 @@ async function updateUserByOpenid(data) {
 }
 
 // 生成默认userInfo
-const defaultAvatarUrl = 'https://www.renwuming.cn/static/jmz/icon.png'
+const defaultAvatarUrl = 'https://www.renwuming.cn/static/jmz/icon.jpg'
 function createDefaultUserInfo(openid) {
   const nickID = openid.substr(-4)
   return {
