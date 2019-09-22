@@ -63,9 +63,9 @@ router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
     const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
     const ownRoom = roomOwnerID == _id
 
-    const playerLimit = MODE === 'game' ? 4 : 1
+    const playerFlag = MODE === 'game' ? (userList.length >= 4) : (userList.length === 1 || userList.length >= 4)
 
-    if (ownRoom && userList.length >= playerLimit) {
+    if (ownRoom && playerFlag) {
         const gameData = await GameRouter.gameInit(userList.slice(0, 4), mode)
         const game = await Games.create(gameData)
         const newGameId = game._id
