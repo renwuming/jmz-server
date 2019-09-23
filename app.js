@@ -14,6 +14,7 @@ const users = require('./routes/users')
 const game = require('./routes/game')
 const room = require('./routes/room')
 const wxLogin = require('./routes/wxLogin')
+const wxAuth = require('./routes/wxAuth')
 const mode = require('./routes/mode')
 
 
@@ -66,6 +67,7 @@ app.use(users.routes(), users.allowedMethods())
 app.use(game.routes(), game.allowedMethods())
 app.use(room.routes(), room.allowedMethods())
 app.use(wxLogin.routes(), wxLogin.allowedMethods())
+app.use(wxAuth.routes(), wxAuth.allowedMethods())
 app.use(mode.routes(), mode.allowedMethods())
 
 // error-handling

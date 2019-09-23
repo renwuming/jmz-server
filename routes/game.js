@@ -1,6 +1,7 @@
 const router = require('koa-router')()
 const Games = require('../models/game')
 const { sessionUser } = require('./middleware')
+const { msgListSecCheck } = require('./wxAuth')
 const dictionary = require('./code')
 
 router.prefix('/games')
@@ -361,6 +362,18 @@ router.post('/wx/:id/submit', sessionUser, getGame, async (ctx, next) => {
     const { battle } = ctx.request.body
     const { game } = ctx.state
     let { activeBattle } = game
+
+    const secResult = await msgListSecCheck(battle.map(item => item.question))
+
+    if(secResult && secResult.length > 0) {
+        const errorList = secResult.map(index => `第${index+1}个内容`).join('，')
+        ctx.body = {
+            code: 501,
+            error: `您所提交的内容含有违法违规内容：${errorList}`,
+        }
+        return
+    }
+
     
     const newBattleData = game.battles[activeBattle]
     const answerUsers = getAnswerUsers(newBattleData, game) // 筛选出答题人列表
