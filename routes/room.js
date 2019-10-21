@@ -382,7 +382,7 @@ async function handleDataWX(list, id) {
         _id: room.activeGame
       })
       if (game.over) {
-        await stopRoomGame(room)
+        await stopRoomGame(room) // todo
       }
     }
     resList.push(room)

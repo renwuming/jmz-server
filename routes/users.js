@@ -1,33 +1,34 @@
 const router = require('koa-router')()
 const Users = require('../models/user')
+const Games = require('../models/game')
+const gameRouter = require('./game')
 const { sessionUser } = require('./middleware')
 
 router.prefix('/users')
 
-router.get('/', sessionUser, async function (ctx, next) {
+router.get('/', sessionUser, async function(ctx, next) {
   ctx.body = handleUserObject(ctx.state.user)
 })
 
-router.post('/', async function (ctx, next) {
-
+router.post('/', async function(ctx, next) {
   const { nick, secret } = ctx.request.body
-  if(!nick || !secret) {
+  if (!nick || !secret) {
     ctx.body = {
       code: 500,
-      error: '用户名 or 密码错误',
+      error: '用户名 or 密码错误'
     }
     return
   }
 
   let user = await Users.findOne({
     nick,
-    secret,
+    secret
   })
 
   if (!user) {
     user = await Users.create({
       nick,
-      secret,
+      secret
     })
   }
 
@@ -38,7 +39,7 @@ router.post('/', async function (ctx, next) {
 })
 
 function handleUserObject(data) {
-  if(data.toObject) {
+  if (data.toObject) {
     data = data.toObject()
   }
   delete data.openid // 去掉openid
@@ -50,9 +51,9 @@ function handleUserObject(data) {
 
 router.getWxUser = async id => {
   const user = await Users.findOne({
-    _id: id,
+    _id: id
   })
-  if(user && user.userInfo) {
+  if (user && user.userInfo) {
     const newUser = handleUserObject(user)
     newUser.id = id
     return newUser
@@ -60,6 +61,26 @@ router.getWxUser = async id => {
   return null
 }
 
+router.get('/history/games', sessionUser, async function(ctx, next) {
+  let { _id } = ctx.state.user
+  _id = _id.toString()
+  const games = await Games.find({ over: true })
+  const result = []
+  games.forEach(game => {
+    game = game.toObject()
+    let { userList, battles } = game
+    userList = userList.map(e => e.id.toString())
+    const userIndex = userList.indexOf(_id)
+    const teamIndex = userIndex >= 2 ? 1 : 0
+    if (userList.includes(_id)) {
+      const gameResult = gameRouter.handleSum(battles)
+      const { winner } = gameResult
+      game.status = winner === teamIndex ? '胜利' : '失败'
+      result.push(game)
+    }
+  })
 
+  ctx.body = result
+})
 
 module.exports = router
