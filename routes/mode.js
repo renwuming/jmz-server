@@ -3,9 +3,9 @@ const { mode } = require('./config')
 
 router.prefix('/mode')
 
-router.get('/', async function (ctx, next) {
+router.get('/', async function(ctx, next) {
   ctx.body = {
-    mode,
+    mode
   }
 })
 
