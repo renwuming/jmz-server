@@ -3,8 +3,6 @@ const Games = require('../models/game')
 const Rooms = require('../models/room')
 const { sessionUser } = require('./middleware')
 const GameRouter = require('./game')
-const UserRouter = require('./users')
-const MODE = require('./config').mode
 
 router.prefix('/rooms')
 
@@ -33,45 +31,6 @@ router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
   const ownRoom = roomOwnerID == _id
 
   if (ownRoom && userList.length >= 4) {
-    const gameData = await GameRouter.gameInit(userList.slice(0, 4), mode)
-    const game = await Games.create(gameData)
-    const newGameId = game._id
-    await Rooms.findOneAndUpdate(
-      {
-        _id: roomData._id
-      },
-      {
-        $set: {
-          activeGame: newGameId
-        }
-      }
-    )
-    ctx.body = {
-      id: newGameId
-    }
-  } else {
-    ctx.body = {
-      code: 501,
-      error: '人数不足'
-    }
-  }
-})
-
-// 小程序 - 开始某房间的游戏
-router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
-  const { _id } = ctx.state.user
-  const roomData = ctx.state.room
-  let { userList, mode } = roomData
-  userList = userList.filter(user => user.userInfo)
-  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
-  const ownRoom = roomOwnerID == _id
-
-  const playerFlag =
-    MODE === 'game'
-      ? userList.length >= 4
-      : userList.length === 1 || userList.length >= 4
-
-  if (ownRoom && playerFlag) {
     const gameData = await GameRouter.gameInit(userList.slice(0, 4), mode)
     const game = await Games.create(gameData)
     const newGameId = game._id
@@ -253,52 +212,6 @@ router.get('/:id', sessionUser, getRoom, async (ctx, next) => {
   }
 })
 
-// 小程序 - 获取房间数据
-router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
-  const { _id } = ctx.state.user
-  let roomData = ctx.state.room
-  let { userList, activeGame, mode } = roomData
-  userList = await updateAndHandleUserList(userList)
-  if (roomData) {
-    const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
-    const ownRoom = roomOwnerID == _id
-    const roomIndex = userList
-      .map(user => user.id.toString())
-      .indexOf(_id.toString())
-    const inRoom = roomIndex >= 0
-    const inGame = inRoom && roomIndex < 4
-    ctx.body = {
-      userList: userList,
-      ownRoom,
-      activeGame,
-      inRoom,
-      inGame,
-      mode
-    }
-    await Rooms.findOneAndUpdate(roomData, {
-      userList
-    })
-  } else {
-    ctx.body = {
-      code: 500
-    }
-  }
-})
-
-async function updateAndHandleUserList(list) {
-  const userList = []
-  for (let i = 0, L = list.length; i < L; i++) {
-    let user = list[i]
-    if (user && user.userInfo) {
-      userList.push(user)
-    } else {
-      user = await UserRouter.getWxUser(user.id)
-      if (user) userList.push(user)
-    }
-  }
-  return userList
-}
-
 // 创建房间
 router.post('/', sessionUser, async (ctx, next) => {
   const { _id, nick, userInfo } = ctx.state.user
@@ -329,7 +242,6 @@ router.get('/', sessionUser, async (ctx, next) => {
       $gt: now - DAY
     }
   })
-
   roomList = await handleData(roomList)
 
   ctx.body = roomList
@@ -342,7 +254,6 @@ async function handleData(list) {
     const room = list[i]
     const { userList } = room
     if (userList.length < 1) continue
-    if (userList[0].userInfo) continue
     if (room.activeGame) {
       const game = await Games.findOne({
         _id: room.activeGame
@@ -355,17 +266,6 @@ async function handleData(list) {
   }
   return resList
 }
-
-// 小程序 - 获取我在的房间列表
-router.get('/list/wx', sessionUser, async (ctx, next) => {
-  const { user } = ctx.state
-  const { _id } = user
-  let roomList = await Rooms.find()
-
-  roomList = await handleDataWX(roomList, _id.toString())
-
-  ctx.body = roomList
-})
 
 async function handleDataWX(list, id) {
   const L = list.length,
