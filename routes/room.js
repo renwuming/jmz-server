@@ -381,7 +381,7 @@ async function handleDataWX(list, id) {
       const game = await Games.findOne({
         _id: room.activeGame
       })
-      if (game.over) {
+      if (game && game.over) {
         await stopRoomGame(room) // todo
       }
     }
