@@ -96,8 +96,10 @@ router.get('/:id', sessionUser, getGame, async (ctx, next) => {
 })
 
 // 小程序 - 获取游戏数据
-router.get('/wx/:id', sessionUser, getGame, async (ctx, next) => {
-  const { _id } = ctx.state.user
+router.get('/wx/:id',
+  // sessionUser, 
+  getGame, async (ctx, next) => {
+  let _id = ctx.state.user ? ctx.state.user._id : ''
   const game = ctx.state.game
   const userList = game.userList.map(item => item.id.toString())
   let index = userList.indexOf(_id.toString())
@@ -531,5 +533,20 @@ async function getWords() {
 Array.prototype.shuffle = function() {
   return this.sort(_ => Math.random() - 0.5)
 }
+
+
+// 小程序 - 获取所有游戏数据
+router.get('/', async ctx => {
+  const list = await Games.find({over: true}).lean()
+
+  ctx.body = list.map(item => {
+    const { _id, userList, activeBattle } = item
+    return {
+      id: _id,
+      userList,
+      battleCount: activeBattle + 1,
+    }
+  })
+})
 
 module.exports = router
