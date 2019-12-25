@@ -27,79 +27,14 @@ async function getGame(ctx, next) {
   }
 }
 
-router.get('/:id', sessionUser, getGame, async (ctx, next) => {
-  const { _id } = ctx.state.user
-  const game = ctx.state.game
-  const userList = game.userList.map(item => item.id.toString())
-  let index = userList.indexOf(_id.toString())
-  // index = 2 // todo 测试修改
 
-  const { activeBattle, teams, over } = game
-  const battle = game.battles[activeBattle]
-  const { desTeam, desUser, codes, question, answerE, answerF } = battle
-  questionStrList = question
-    ? question.map(str => str.replace(/\n/g, ''))
-    : null
-  const desIndex = desTeam * 2 + desUser
-  const battleData = {
-    desTeam,
-    desUser,
-    question: questionStrList,
-    answerE: !!answerE,
-    answerF: !!answerF
-  }
-  if (index === desIndex) {
-    battleData.codes = codes
-  }
-  const history = await getGameHistory(game)
-  const gameResult = handleSum(history)
-  const teamNames = teams.map(t => t.name)
-  let { sumList, gameOver, winner } = gameResult
-  if (gameOver && !over) {
-    // 若游戏已结束，更新数据库
-    await Games.findOneAndUpdate(
-      {
-        _id: game._id
-      },
-      {
-        over: gameOver
-      }
-    )
-  }
-  if (over) gameOver = true // 非正常情况，游戏被房主终止
-  const teamIndex = Math.floor(index / 2)
-  const bodyData = {
-    userIndex: index,
-    userList: game.userList,
-    teamNames,
-    battle: battleData,
-    history,
-    sumList: sumList,
-    gameOver: gameOver,
-    winner: winner,
-    activeBattle
-  }
-
-  if (index >= 0) {
-    if (gameOver) {
-      bodyData.enemyWords = teams[1 - teamIndex].words
-    }
-    const teamWords = teams[teamIndex].words
-    bodyData.teamWords = teamWords
-    ctx.body = bodyData
-  } else {
-    if (gameOver) {
-      bodyData.allWords = teams.map(t => t.words)
-    }
-    ctx.body = bodyData
-  }
-})
+router.get('/:id', getGame, getGameData)
 
 // 小程序 - 获取游戏数据
-router.get('/wx/:id',
-  // sessionUser, 
-  getGame, async (ctx, next) => {
-  let _id = ctx.state.user ? ctx.state.user._id : ''
+router.get('/wx/:id', sessionUser, getGame, getGameData)
+
+const getGameData = async (ctx, next) => {
+  const _id = ctx.state.user ? ctx.state.user._id : ''
   const game = ctx.state.game
   const userList = game.userList.map(item => item.id.toString())
   let index = userList.indexOf(_id.toString())
@@ -211,7 +146,7 @@ router.get('/wx/:id',
     bodyData.observeMode = true
     ctx.body = bodyData
   }
-})
+}
 
 function handleSum(historylist) {
   const resultMap = [
