@@ -27,12 +27,6 @@ async function getGame(ctx, next) {
   }
 }
 
-
-router.get('/:id', getGame, getGameData)
-
-// 小程序 - 获取游戏数据
-router.get('/wx/:id', sessionUser, getGame, getGameData)
-
 const getGameData = async (ctx, next) => {
   const _id = ctx.state.user ? ctx.state.user._id : ''
   const game = ctx.state.game
@@ -147,6 +141,12 @@ const getGameData = async (ctx, next) => {
     ctx.body = bodyData
   }
 }
+
+router.get('/:id', getGame, getGameData)
+
+// 小程序 - 获取游戏数据
+router.get('/wx/:id', sessionUser, getGame, getGameData)
+
 
 function handleSum(historylist) {
   const resultMap = [
