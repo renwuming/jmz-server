@@ -15,7 +15,7 @@ const sessionUser = async function(ctx, next) {
     user.nick = user.userInfo.nickname;
     ctx.state.user = user;
     await next();
-  } catch {
+  } catch(error) {
     ctx.body = {
       code: 408,
       error: "登录超时"
