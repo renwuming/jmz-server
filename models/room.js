@@ -6,7 +6,6 @@ var productionSchema = new Schema({
   activeGame: String,
   userList: Array,
   timeStamp: Number,
-  mode: Boolean,
 
   gameHistory: Array
 })

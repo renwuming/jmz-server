@@ -10,6 +10,10 @@ router.get('/', sessionUser, async function(ctx, next) {
   ctx.body = handleUserObject(ctx.state.user)
 })
 
+router.post('/validate', sessionUser, async function(ctx, next) {
+  ctx.body = handleUserObject(ctx.state.user)
+})
+
 router.post('/', async function(ctx, next) {
   const { nick, secret } = ctx.request.body
   if (!nick || !secret) {

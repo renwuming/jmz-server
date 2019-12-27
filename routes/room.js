@@ -24,44 +24,12 @@ async function getRoom(ctx, next) {
   }
 }
 
-// 开始某房间的游戏
-router.post('/:id/start', sessionUser, getRoom, async (ctx, next) => {
-  const { _id } = ctx.state.user
-  const roomData = ctx.state.room
-  const { userList, mode } = roomData
-  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
-  const ownRoom = roomOwnerID == _id
-
-  if (ownRoom && userList.length >= 4) {
-    const gameData = await GameRouter.gameInit(userList.slice(0, 4), mode)
-    const game = await Games.create(gameData)
-    const newGameId = game._id
-    await Rooms.findOneAndUpdate(
-      {
-        _id: roomData._id
-      },
-      {
-        $set: {
-          activeGame: newGameId
-        }
-      }
-    )
-    ctx.body = {
-      id: newGameId
-    }
-  } else {
-    ctx.body = {
-      code: 501,
-      error: '人数不足'
-    }
-  }
-})
-
 // 小程序 - 开始某房间的游戏
 router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user
+  const { randomMode } = ctx.request.body
   const roomData = ctx.state.room
-  let { userList, mode } = roomData
+  let { userList } = roomData
   userList = userList.filter(user => user.userInfo)
   const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null
   const ownRoom = roomOwnerID == _id
@@ -72,7 +40,7 @@ router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
       : userList.length === 1 || userList.length >= 4
 
   if (ownRoom && playerFlag) {
-    const gameData = await GameRouter.gameInit(userList.slice(0, 4), mode)
+    const gameData = await GameRouter.gameInit(userList.slice(0, 4), randomMode)
     const game = await Games.create(gameData)
     const newGameId = game._id
     await Rooms.findOneAndUpdate(
