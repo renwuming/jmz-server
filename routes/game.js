@@ -32,7 +32,7 @@ const getGameData = async ctx => {
   const game = ctx.state.game;
   const userList = game.userList.map(item => item.id.toString());
   let index = userList.indexOf(_id.toString());
-  index = 3; // todo 测试修改
+  // index = 3; // todo 测试修改
   let teamIndex = Math.floor(index / 2);
   if (teamIndex < 0) teamIndex = 0; // 此时为旁观者模式
 
@@ -299,7 +299,7 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
 
   const userList = game.userList.map(item => item.id.toString());
   let index = userList.indexOf(_id.toString());
-  index = 3; // todo 测试修改
+  // index = 3; // todo 测试修改
   const teamIndex = Math.floor(index / 2);
   // 判断提交者的角色
   const type = getBattleType(index, newBattleData, battleIndex);
