@@ -82,7 +82,7 @@ router.get("/history/games", sessionUser, async function(ctx, next) {
     const gameResult = gameRouter.handleSum(battles);
     const { winner } = gameResult;
     game.status =
-      winner < 0 || !winner ? "平局" : winner === teamIndex ? "胜利" : "失败";
+      winner < 0 || winner === undefined ? "平局" : winner === teamIndex ? "胜利" : "失败";
     result.push(game);
   });
 
