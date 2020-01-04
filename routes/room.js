@@ -250,6 +250,7 @@ async function handleDataWX(list) {
       });
       if (game && game.over) {
         await stopRoomGame(room);
+        continue;
       }
     }
     resList.push(room);
