@@ -101,73 +101,33 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
 
 // 修改房间里玩家顺序
 // todo 验证是否为房主
-router.post("/:id/userList", sessionUser, getRoom, async ctx => {
-  const { userList } = ctx.request.body;
-  let roomData = ctx.state.room;
-  if (roomData) {
-    roomData.userList = userList;
-    await Rooms.updateOne(
-      {
-        _id: roomData._id
-      },
-      roomData
-    );
-    ctx.body = {};
-  } else {
-    ctx.body = {
-      code: 500
-    };
-  }
-});
-
-// 修改房间的游戏模式
-// todo 验证是否为房主
-router.post("/:id/mode", sessionUser, getRoom, async ctx => {
-  const { mode } = ctx.request.body;
-  let roomData = ctx.state.room;
-  if (roomData) {
-    roomData.mode = mode;
-    await Rooms.updateOne(
-      {
-        _id: roomData._id
-      },
-      roomData
-    );
-    ctx.body = {
-      mode
-    };
-  } else {
-    ctx.body = {
-      code: 500
-    };
-  }
-});
-
-// 停止房间当前游戏
-// todo 验证是否为房主
-router.post("/:id/stop", sessionUser, getRoom, async ctx => {
-  let roomData = ctx.state.room;
-  if (roomData) {
-    await stopRoomGame(roomData);
-    ctx.body = {};
-  } else {
-    ctx.body = {
-      code: 500
-    };
-  }
-});
+// router.post("/:id/userList", sessionUser, getRoom, async ctx => {
+//   const { userList } = ctx.request.body;
+//   let roomData = ctx.state.room;
+//   if (roomData) {
+//     roomData.userList = userList;
+//     await Rooms.updateOne(
+//       {
+//         _id: roomData._id
+//       },
+//       roomData
+//     );
+//     ctx.body = {};
+//   } else {
+//     ctx.body = {
+//       code: 500
+//     };
+//   }
+// });
 
 async function stopRoomGame(roomData) {
-  const { activeGame } = roomData;
-  await GameRouter.stopGame(activeGame);
-  roomData.gameHistory = roomData.gameHistory || [];
-  roomData.gameHistory.push(activeGame);
-  roomData.activeGame = null;
   await Rooms.updateOne(
     {
       _id: roomData._id
     },
-    roomData
+    {
+      over: true
+    }
   );
 }
 
@@ -291,48 +251,13 @@ router.post("/", sessionUser, async (ctx, next) => {
   };
 });
 
-// 获取房间列表 - 近一天的活跃房间
-const DAY = 24 * 3600 * 1000;
-router.get("/", sessionUser, async (ctx, next) => {
-  const now = +new Date();
-  let roomList = await Rooms.find({
-    timeStamp: {
-      $gt: now - DAY
-    }
-  });
-
-  roomList = await handleData(roomList);
-
-  ctx.body = roomList;
-});
-
-async function handleData(list) {
-  const L = list.length,
-    resList = [];
-  for (let i = 0; i < L; i++) {
-    const room = list[i];
-    const { userList } = room;
-    if (userList.length < 1) continue;
-    if (userList[0].userInfo) continue;
-    if (room.activeGame) {
-      const game = await Games.findOne({
-        _id: room.activeGame
-      });
-      if (game.over) {
-        await stopRoomGame(room);
-      }
-    }
-    resList.push(room);
-  }
-  return resList;
-}
-
 // 小程序 - 获取我在的房间列表
 router.get("/list/wx", sessionUser, async (ctx, next) => {
   const { user } = ctx.state;
   const { _id } = user;
   let roomList = await Rooms.find({
-    userList: { $elemMatch: { id: _id.toString() } }
+    userList: { $elemMatch: { id: _id.toString() } },
+    over: { $ne: true }
   });
 
   roomList = await handleDataWX(roomList);
@@ -346,14 +271,13 @@ async function handleDataWX(list) {
   for (let i = 0; i < L; i++) {
     const room = list[i];
     const { userList } = room;
-    if (userList.length < 1) continue;
     if (!userList[0].userInfo) continue;
     if (room.activeGame) {
       const game = await Games.findOne({
         _id: room.activeGame
       });
       if (game && game.over) {
-        await stopRoomGame(room); // todo
+        await stopRoomGame(room);
       }
     }
     resList.push(room);
