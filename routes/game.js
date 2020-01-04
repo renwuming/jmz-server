@@ -205,7 +205,7 @@ function handleSum(historylist) {
         }
       });
   });
-  let winner;
+  let winner = -1;
   let gameOver;
   let winNum = 0;
   let winFlag = false;
