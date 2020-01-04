@@ -160,7 +160,7 @@ router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
 router.get("/:id", sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
   let roomData = ctx.state.room;
-  const { userList, activeGame, mode } = roomData;
+  const { userList, activeGame, over } = roomData;
   if (roomData) {
     const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
     const ownRoom = roomOwnerID == _id;
@@ -175,7 +175,7 @@ router.get("/:id", sessionUser, getRoom, async (ctx, next) => {
       activeGame,
       inRoom,
       inGame,
-      mode
+      over
     };
   } else {
     ctx.body = {

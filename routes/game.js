@@ -405,7 +405,8 @@ router.gameInit = async function(userList, mode) {
       }
     ],
     battles: [createBattle(-1)],
-    activeBattle: 0
+    activeBattle: 0,
+    timeStamp: +new Date()
   };
   return data;
 };

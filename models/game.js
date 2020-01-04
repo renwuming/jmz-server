@@ -8,6 +8,7 @@ var productionSchema = new Schema({
   battles: Array,
   activeBattle: Number,
   over: Boolean,
+  timeStamp: Number,
 })
 
 module.exports = mongoose.model('game',productionSchema)

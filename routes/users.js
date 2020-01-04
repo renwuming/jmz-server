@@ -81,11 +81,12 @@ router.get("/history/games", sessionUser, async function(ctx, next) {
     const teamIndex = userIndex >= 2 ? 1 : 0;
     const gameResult = gameRouter.handleSum(battles);
     const { winner } = gameResult;
-    game.status = winner === teamIndex ? "胜利" : "失败";
+    game.status =
+      winner < 0 || !winner ? "平局" : winner === teamIndex ? "胜利" : "失败";
     result.push(game);
   });
 
-  ctx.body = result;
+  ctx.body = result.sort((a, b) => b.timeStamp - a.timeStamp);
 });
 
 module.exports = router;
