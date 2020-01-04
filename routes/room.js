@@ -156,39 +156,11 @@ router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
   }
 });
 
-// 获取房间数据
-router.get("/:id", sessionUser, getRoom, async (ctx, next) => {
-  const { _id } = ctx.state.user;
-  let roomData = ctx.state.room;
-  const { userList, activeGame, over } = roomData;
-  if (roomData) {
-    const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
-    const ownRoom = roomOwnerID == _id;
-    const roomIndex = userList
-      .map(user => user.id.toString())
-      .indexOf(_id.toString());
-    const inRoom = roomIndex >= 0;
-    const inGame = inRoom && roomIndex < 4;
-    ctx.body = {
-      userList: roomData.userList,
-      ownRoom,
-      activeGame,
-      inRoom,
-      inGame,
-      over
-    };
-  } else {
-    ctx.body = {
-      code: 500
-    };
-  }
-});
-
 // 小程序 - 获取房间数据
 router.get("/wx/:id", sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
   let roomData = ctx.state.room;
-  let { userList, activeGame, mode } = roomData;
+  let { userList, activeGame, over } = roomData;
   userList = await updateAndHandleUserList(userList);
   if (roomData) {
     const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
@@ -204,7 +176,7 @@ router.get("/wx/:id", sessionUser, getRoom, async (ctx, next) => {
       activeGame,
       inRoom,
       inGame,
-      mode
+      over
     };
     await Rooms.findOneAndUpdate(roomData, {
       userList
