@@ -209,11 +209,11 @@ function handleSum(historylist) {
   let gameOver;
   let winNum = 0;
   let winFlag = false;
-  if (resultMap[0].black >= 2 || resultMap[1].red >= 2) {
+  if (resultMap[0].black >= 2 || resultMap[0].red >= 2) {
     winFlag = true;
     winNum++;
   }
-  if (resultMap[1].black >= 2 || resultMap[0].red >= 2) {
+  if (resultMap[1].black >= 2 || resultMap[1].red >= 2) {
     winFlag = true;
     winNum--;
   }
