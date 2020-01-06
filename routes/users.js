@@ -86,7 +86,11 @@ router.get("/history/games", sessionUser, async function(ctx, next) {
     result.push(game);
   });
 
-  ctx.body = result.sort((a, b) => b.timeStamp - a.timeStamp);
+  ctx.body = result.sort((a, b) => {
+    const timeStampA = a.timeStamp || 0
+    const timeStampB = b.timeStamp || 0
+    return timeStampB - timeStampA
+  });
 });
 
 module.exports = router;

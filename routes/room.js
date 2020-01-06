@@ -151,7 +151,43 @@ router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
     ctx.body = null;
   } else {
     ctx.body = {
-      code: 500
+      code: 500,
+      error: "请求失败"
+    };
+  }
+});
+
+// 调整玩家顺序
+router.post("/:id/edituserlist/:index", sessionUser, getRoom, async ctx => {
+  const { index } = ctx.params;
+  const { _id } = ctx.state.user;
+  let roomData = ctx.state.room;
+  const { userList } = roomData;
+
+  if (roomData) {
+    const _userList = userList.map(user => user.id.toString());
+    const userIndex = _userList.indexOf(_id.toString());
+    if (userIndex === 0) {
+      const editUser = userList.splice(index, 1);
+      roomData.userList = [userList[0], ...editUser, ...userList.slice(1)];
+      console.log(editUser);
+      await Rooms.updateOne(
+        {
+          _id: roomData._id
+        },
+        roomData
+      );
+      ctx.body = null;
+    } else {
+      ctx.body = {
+        code: 502,
+        error: "请求失败"
+      };
+    }
+  } else {
+    ctx.body = {
+      code: 500,
+      error: "请求失败"
     };
   }
 });
@@ -234,7 +270,7 @@ router.get("/list/wx", sessionUser, async (ctx, next) => {
 
   roomList = await handleDataWX(roomList);
 
-  ctx.body = roomList;
+  ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
 });
 
 async function handleDataWX(list) {

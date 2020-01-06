@@ -3,6 +3,7 @@ const Games = require("../models/game");
 const { sessionUser } = require("./middleware");
 const { msgListSecCheck } = require("./wxAuth");
 const dictionary = require("./code");
+let DEBUG_INDEX // = 2; // todo
 
 router.prefix("/games");
 
@@ -32,7 +33,7 @@ const getGameData = async ctx => {
   const game = ctx.state.game;
   const userList = game.userList.map(item => item.id.toString());
   let index = userList.indexOf(_id.toString());
-  // index = 3; // todo 测试修改
+  if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
   let teamIndex = Math.floor(index / 2);
   if (teamIndex < 0) teamIndex = 0; // 此时为旁观者模式
 
@@ -96,11 +97,10 @@ const getGameData = async ctx => {
   }
   const battleList = battleData.codes.map((codes, teamIndex) => {
     const myQuestionStrList = questionStrList[teamIndex];
-    const myJiemiAnswers = jiemiAnswers[teamIndex];
     return codes.map((code, index) => ({
       question: myQuestionStrList[index],
       code,
-      answer: myJiemiAnswers[index]
+      answer: -1,
     }));
   });
 
@@ -299,7 +299,7 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
 
   const userList = game.userList.map(item => item.id.toString());
   let index = userList.indexOf(_id.toString());
-  // index = 3; // todo 测试修改
+  if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
   const teamIndex = Math.floor(index / 2);
   // 判断提交者的角色
   const type = getBattleType(index, newBattleData, battleIndex);
