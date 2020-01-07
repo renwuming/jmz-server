@@ -3,7 +3,7 @@ const Games = require("../models/game");
 const { sessionUser } = require("./middleware");
 const { msgListSecCheck } = require("./wxAuth");
 const dictionary = require("./code");
-let DEBUG_INDEX // = 2; // todo
+let DEBUG_INDEX; // = 2; // todo
 
 router.prefix("/games");
 
@@ -66,33 +66,35 @@ const getGameData = async ctx => {
     ],
     type: ["等待", "等待"]
   };
-  // 若为加密者
-  if (index === desUsers[teamIndex]) {
-    // 获取本队的code
-    battleData.codes[teamIndex] = codes[teamIndex];
-    // 若尚未加密完成，则状态为加密中
-    if (judgeEmpty(questions[teamIndex])) {
-      battleData.type[teamIndex] = "加密";
+  if (index >= 0) {
+    // 若为加密者
+    if (index === desUsers[teamIndex]) {
+      // 获取本队的code
+      battleData.codes[teamIndex] = codes[teamIndex];
+      // 若尚未加密完成，则状态为加密中
+      if (judgeEmpty(questions[teamIndex])) {
+        battleData.type[teamIndex] = "加密";
+      }
     }
-  }
-  // 若为解密者
-  if (index === jiemiUsers[teamIndex]) {
-    // 若本队已加密，却未解密
-    if (
-      !judgeEmpty(questions[teamIndex]) &&
-      judgeEmpty(jiemiAnswers[teamIndex])
-    ) {
-      battleData.type[teamIndex] = "解密";
+    // 若为解密者
+    if (index === jiemiUsers[teamIndex]) {
+      // 若本队已加密，却未解密
+      if (
+        !judgeEmpty(questions[teamIndex]) &&
+        judgeEmpty(jiemiAnswers[teamIndex])
+      ) {
+        battleData.type[teamIndex] = "解密";
+      }
     }
-  }
-  // 若为敌方队伍的拦截者
-  if (index === lanjieUsers[1 - teamIndex]) {
-    // 若敌方已加密，却未拦截
-    if (
-      !judgeEmpty(questions[1 - teamIndex]) &&
-      judgeEmpty(lanjieAnswers[1 - teamIndex])
-    ) {
-      battleData.type[1 - teamIndex] = "拦截";
+    // 若为敌方队伍的拦截者
+    if (index === lanjieUsers[1 - teamIndex]) {
+      // 若敌方已加密，却未拦截
+      if (
+        !judgeEmpty(questions[1 - teamIndex]) &&
+        judgeEmpty(lanjieAnswers[1 - teamIndex])
+      ) {
+        battleData.type[1 - teamIndex] = "拦截";
+      }
     }
   }
   const battleList = battleData.codes.map((codes, teamIndex) => {
@@ -100,7 +102,7 @@ const getGameData = async ctx => {
     return codes.map((code, index) => ({
       question: myQuestionStrList[index],
       code,
-      answer: -1,
+      answer: -1
     }));
   });
 
@@ -232,7 +234,7 @@ function handleSum(historylist) {
     gameOver,
     winner,
     sumList: resultMap.map(r => r.sum),
-    resultMap,
+    resultMap
   };
 }
 
