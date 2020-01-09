@@ -1,5 +1,6 @@
 const router = require("koa-router")();
 const Words = require("../models/word");
+const dictionary = require("./code");
 const { sessionUser } = require("./middleware");
 
 router.prefix("/words");
@@ -11,7 +12,7 @@ router.post("/add", sessionUser, async ctx => {
     content: word
   });
 
-  if (exists) {
+  if (exists || dictionary.includes(word)) {
     ctx.body = {
       code: 501,
       error: "词条已存在"
