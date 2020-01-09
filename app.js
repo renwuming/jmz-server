@@ -17,6 +17,7 @@ const wxLogin = require('./routes/wxLogin')
 const wxAuth = require('./routes/wxAuth')
 const webWxLogin = require('./routes/webWxLogin')
 const mode = require('./routes/mode')
+const word = require('./routes/word')
 
 
 global.mongoose = mongoose.connect('mongodb://localhost:27017/jmz', { useNewUrlParser: true });
@@ -71,6 +72,7 @@ app.use(wxLogin.routes(), wxLogin.allowedMethods())
 app.use(wxAuth.routes(), wxAuth.allowedMethods())
 app.use(webWxLogin.routes(), webWxLogin.allowedMethods())
 app.use(mode.routes(), mode.allowedMethods())
+app.use(word.routes(), word.allowedMethods())
 
 // error-handling
 app.on('error', (err, ctx) => {
