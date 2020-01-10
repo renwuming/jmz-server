@@ -300,24 +300,29 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
     return;
   }
 
-  // 是否包含代码中的关键字
-  const keywordsList = teams.reduce((list, team) => {
-    const result = team.words.reduce((list, words) => {
-      return list.concat(words.split(""));
-    }, []);
-    return list.concat(result);
+  // 提交者的基本信息
+  const userList = game.userList.map(item => item.id.toString());
+  let index = userList.indexOf(_id.toString());
+  if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
+  const teamIndex = Math.floor(index / 2);
+
+  // 是否包含我方队伍的代码中的关键字
+  const keywordsList = teams[teamIndex].words.reduce((list, words) => {
+    return list.concat(words.split(""));
   }, []);
-  const keyErrorList = []
-  let keyError
+  const keyErrorList = [];
+  let keyError;
   qList.forEach((q, index) => {
     const flag = [].some.call(q, word => keywordsList.includes(word));
-    if(flag) {
-      keyErrorList.push(index)
-      keyError = true
+    if (flag) {
+      keyErrorList.push(index);
+      keyError = true;
     }
   });
-  if(keyError) {
-    const errorList = keyErrorList.map(index => `第${index + 1}个内容`).join("，");
+  if (keyError) {
+    const errorList = keyErrorList
+      .map(index => `第${index + 1}个内容`)
+      .join("，");
     ctx.body = {
       code: 501,
       error: `您所提交的内容含有词语关键字：${errorList}`
@@ -325,13 +330,8 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
     return;
   }
 
-
   const newBattleData = game.battles[activeBattle];
 
-  const userList = game.userList.map(item => item.id.toString());
-  let index = userList.indexOf(_id.toString());
-  if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
-  const teamIndex = Math.floor(index / 2);
   // 判断提交者的角色
   const type = getBattleType(index, newBattleData, battleIndex);
   if (type !== "等待") {
