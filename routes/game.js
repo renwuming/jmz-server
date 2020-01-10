@@ -286,10 +286,11 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
   const { _id } = ctx.state.user;
   const { battle, battleIndex } = ctx.request.body;
   const { game } = ctx.state;
-  let { activeBattle } = game;
+  let { activeBattle, teams } = game;
+  const qList = battle.map(item => item.question);
 
   // 是否包含违法内容
-  const secResult = await msgListSecCheck(battle.map(item => item.question));
+  const secResult = await msgListSecCheck(qList);
   if (secResult && secResult.length > 0) {
     const errorList = secResult.map(index => `第${index + 1}个内容`).join("，");
     ctx.body = {
@@ -298,6 +299,32 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
     };
     return;
   }
+
+  // 是否包含代码中的关键字
+  const keywordsList = teams.reduce((list, team) => {
+    const result = team.words.reduce((list, words) => {
+      return list.concat(words.split(""));
+    }, []);
+    return list.concat(result);
+  }, []);
+  const keyErrorList = []
+  let keyError
+  qList.forEach((q, index) => {
+    const flag = [].some.call(q, word => keywordsList.includes(word));
+    if(flag) {
+      keyErrorList.push(index)
+      keyError = true
+    }
+  });
+  if(keyError) {
+    const errorList = keyErrorList.map(index => `第${index + 1}个内容`).join("，");
+    ctx.body = {
+      code: 501,
+      error: `您所提交的内容含有词语关键字：${errorList}`
+    };
+    return;
+  }
+
 
   const newBattleData = game.battles[activeBattle];
 
