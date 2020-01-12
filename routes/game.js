@@ -300,14 +300,8 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
     return;
   }
 
-  // 提交者的基本信息
-  const userList = game.userList.map(item => item.id.toString());
-  let index = userList.indexOf(_id.toString());
-  if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
-  const teamIndex = Math.floor(index / 2);
-
-  // 是否包含我方队伍的代码中的关键字
-  const keywordsList = teams[teamIndex].words.reduce((list, words) => {
+  // 是否包含所提交的队伍的代码中的关键字
+  const keywordsList = teams[battleIndex].words.reduce((list, words) => {
     return list.concat(words.split(""));
   }, []);
   const keyErrorList = [];
@@ -330,6 +324,12 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
     return;
   }
 
+
+  // 提交者的基本信息
+  const userList = game.userList.map(item => item.id.toString());
+  let index = userList.indexOf(_id.toString());
+  if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
+  const teamIndex = Math.floor(index / 2);
   const newBattleData = game.battles[activeBattle];
 
   // 判断提交者的角色
