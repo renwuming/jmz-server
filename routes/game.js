@@ -7,6 +7,19 @@ let DEBUG_INDEX; // = 2; // todo
 
 router.prefix("/games");
 
+const stageMap = {
+  0: {
+    name: "加密", // 加密阶段
+    time: 20 // 单位s
+  },
+  1: {
+    name: "解密/拦截", // 解密/拦截阶段
+    time: 20 // 单位s
+  }
+};
+
+router.stageMap = stageMap;
+
 async function getGame(ctx, next) {
   const { id } = ctx.params;
   try {
@@ -128,16 +141,6 @@ const getGameData = async ctx => {
 
   // 倒计时逻辑
   let countdownData = null;
-  const stageMap = {
-    0: {
-      name: "加密", // 加密阶段
-      time: 120 // 单位s
-    },
-    1: {
-      name: "解密/拦截", // 解密/拦截阶段
-      time: 300 // 单位s
-    }
-  };
   if (!gameOver && quickMode) {
     let { lastStage } = game;
     if (!lastStage) {
