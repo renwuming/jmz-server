@@ -10,11 +10,11 @@ router.prefix("/games");
 const stageMap = {
   0: {
     name: "加密", // 加密阶段
-    time: 20 // 单位s
+    time: 120 // 单位s
   },
   1: {
     name: "解密/拦截", // 解密/拦截阶段
-    time: 20 // 单位s
+    time: 240 // 单位s
   }
 };
 
