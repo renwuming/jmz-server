@@ -40,14 +40,6 @@ async function handleQuickGame(game) {
   if (remainingTime < 0) {
     lastStage.timeStamp = now;
     lastStage.stage = 1 - stage;
-    await Games.findOneAndUpdate(
-      {
-        _id
-      },
-      {
-        lastStage
-      }
-    );
 
     const { activeBattle, battles } = game;
     const currentBattle = battles[activeBattle];
@@ -72,5 +64,13 @@ async function handleQuickGame(game) {
       });
     }
     await gameRouter.updateGameAfterSubmit(activeBattle, currentBattle, game);
+    await Games.findOneAndUpdate(
+      {
+        _id
+      },
+      {
+        lastStage
+      }
+    );
   }
 }
