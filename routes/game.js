@@ -379,48 +379,7 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
     }
     game.battles[activeBattle] = newBattleData;
 
-    const { codes, jiemiAnswers, questions, lanjieAnswers } = newBattleData;
-    const jiamiFull = questions.every(list => !judgeEmpty(list));
-    const jiemiFull = jiemiAnswers.every(list => !judgeEmpty(list));
-    const lanjieFull = lanjieAnswers.every(list => !judgeEmpty(list));
-    // 若为第一轮，不需要拦截
-    if (activeBattle === 0 && jiamiFull && jiemiFull) {
-      codes.forEach((codes, teamIndex) => {
-        const answerStr = jiemiAnswers[teamIndex].join("");
-        const codeStr = codes.join("");
-        if (answerStr !== codeStr) {
-          newBattleData.blacks[teamIndex] = true;
-        }
-      });
-      game.battles[activeBattle] = newBattleData;
-      game.battles.push(createBattle(activeBattle));
-      activeBattle++;
-    } else if (jiamiFull && jiemiFull && lanjieFull) {
-      codes.forEach((codes, teamIndex) => {
-        const lanjieStr = lanjieAnswers[teamIndex].join("");
-        const answerStr = jiemiAnswers[teamIndex].join("");
-        const codeStr = codes.join("");
-        if (answerStr !== codeStr) {
-          newBattleData.blacks[teamIndex] = true;
-        }
-        if (lanjieStr === codeStr) {
-          newBattleData.reds[teamIndex] = true;
-        }
-      });
-      game.battles[activeBattle] = newBattleData;
-      game.battles.push(createBattle(activeBattle));
-      activeBattle++;
-    }
-
-    await Games.findOneAndUpdate(
-      {
-        _id: game._id
-      },
-      {
-        battles: game.battles,
-        activeBattle
-      }
-    );
+    await updateGameAfterSubmit(activeBattle, newBattleData, game);
 
     ctx.body = null;
   } else {
@@ -430,6 +389,51 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
     };
   }
 });
+
+async function updateGameAfterSubmit(activeBattle, newBattleData, game) {
+  const { codes, jiemiAnswers, questions, lanjieAnswers } = newBattleData;
+  const jiamiFull = questions.every(list => !judgeEmpty(list));
+  const jiemiFull = jiemiAnswers.every(list => !judgeEmpty(list));
+  const lanjieFull = lanjieAnswers.every(list => !judgeEmpty(list));
+  // 若为第一轮，不需要拦截
+  if (activeBattle === 0 && jiamiFull && jiemiFull) {
+    codes.forEach((codes, teamIndex) => {
+      const answerStr = jiemiAnswers[teamIndex].join("");
+      const codeStr = codes.join("");
+      if (answerStr !== codeStr) {
+        newBattleData.blacks[teamIndex] = true;
+      }
+    });
+    game.battles[activeBattle] = newBattleData;
+    game.battles.push(createBattle(activeBattle));
+    activeBattle++;
+  } else if (jiamiFull && jiemiFull && lanjieFull) {
+    codes.forEach((codes, teamIndex) => {
+      const lanjieStr = lanjieAnswers[teamIndex].join("");
+      const answerStr = jiemiAnswers[teamIndex].join("");
+      const codeStr = codes.join("");
+      if (answerStr !== codeStr) {
+        newBattleData.blacks[teamIndex] = true;
+      }
+      if (lanjieStr === codeStr) {
+        newBattleData.reds[teamIndex] = true;
+      }
+    });
+    game.battles[activeBattle] = newBattleData;
+    game.battles.push(createBattle(activeBattle));
+    activeBattle++;
+  }
+
+  await Games.findOneAndUpdate(
+    {
+      _id: game._id
+    },
+    {
+      battles: game.battles,
+      activeBattle
+    }
+  );
+}
 
 function getBattleType(index, battle, battleIndex) {
   const { desUsers, jiemiUsers, lanjieUsers } = battle;
@@ -476,6 +480,8 @@ router.gameInit = async function(userList, randomMode, quickMode) {
 };
 
 router.handleSum = handleSum;
+router.updateGameAfterSubmit = updateGameAfterSubmit;
+router.judgeEmpty = judgeEmpty;
 
 function getTeamNames() {
   return ["马里奥", "酷霸王"];
