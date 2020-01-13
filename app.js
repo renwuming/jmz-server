@@ -9,6 +9,7 @@ const session = require('koa-session')
 const cors = require('koa2-cors');
 const mongoose = require('mongoose')
 
+const gameSchedule = require('./routes/gameSchedule')
 const index = require('./routes/index')
 const users = require('./routes/users')
 const game = require('./routes/game')

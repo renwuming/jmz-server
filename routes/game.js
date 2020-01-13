@@ -37,7 +37,7 @@ const getGameData = async ctx => {
   let teamIndex = Math.floor(index / 2);
   if (teamIndex < 0) teamIndex = 0; // 此时为旁观者模式
 
-  const { activeBattle, teams, over, battles } = game;
+  const { activeBattle, teams, over, battles, quickMode } = game;
   const battle = battles[activeBattle];
   const {
     desUsers,
@@ -125,6 +125,37 @@ const getGameData = async ctx => {
     );
   }
   if (over) gameOver = true; // 非正常情况，游戏被房主终止
+
+  // 倒计时逻辑
+  let countdownData = null;
+  const stageMap = {
+    0: {
+      name: "加密", // 加密阶段
+      time: 120 // 单位s
+    },
+    1: {
+      name: "解密/拦截", // 解密/拦截阶段
+      time: 300 // 单位s
+    }
+  };
+  if (!gameOver && quickMode) {
+    let { lastStage } = game;
+    if (!lastStage) {
+      lastStage = {
+        timeStamp: game.timeStamp,
+        stage: 0
+      };
+    }
+    const { timeStamp, stage } = lastStage;
+    const now = new Date().getTime();
+    const remainingTime =
+      stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
+    countdownData = {
+      time: remainingTime,
+      name: stageMap[stage].name
+    };
+  }
+
   const bodyData = {
     userIndex: index,
     userList: game.userList.map(user => user.userInfo),
@@ -145,7 +176,9 @@ const getGameData = async ctx => {
     desUsers,
     jiemiUsers,
     teamIndex,
-    lanjieUsers
+    lanjieUsers,
+    quickMode,
+    countdownData
   };
 
   if (index >= 0 || gameOver) {
@@ -324,7 +357,6 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
     return;
   }
 
-
   // 提交者的基本信息
   const userList = game.userList.map(item => item.id.toString());
   let index = userList.indexOf(_id.toString());
@@ -414,9 +446,9 @@ function getBattleType(index, battle, battleIndex) {
   return "等待";
 }
 
-router.gameInit = async function(userList, mode) {
+router.gameInit = async function(userList, randomMode, quickMode) {
   // 在随机模式下，将玩家列表打乱顺序
-  if (mode) {
+  if (randomMode) {
     userList.shuffle();
   }
   const [team0, team1] = getTeamNames();
@@ -437,7 +469,8 @@ router.gameInit = async function(userList, mode) {
     ],
     battles: [createBattle(-1)],
     activeBattle: 0,
-    timeStamp: +new Date()
+    timeStamp: +new Date(),
+    quickMode
   };
   return data;
 };

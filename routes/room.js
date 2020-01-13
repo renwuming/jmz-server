@@ -27,7 +27,7 @@ async function getRoom(ctx, next) {
 // 小程序 - 开始某房间的游戏
 router.post("/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
-  const { randomMode } = ctx.request.body;
+  const { randomMode, quickMode } = ctx.request.body;
   const roomData = ctx.state.room;
   let { userList } = roomData;
   userList = userList.filter(user => user.userInfo);
@@ -42,7 +42,8 @@ router.post("/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
   if (ownRoom && playerFlag) {
     const gameData = await GameRouter.gameInit(
       userList.slice(0, 4),
-      randomMode
+      randomMode,
+      quickMode
     );
     const game = await Games.create(gameData);
     const newGameId = game._id;
