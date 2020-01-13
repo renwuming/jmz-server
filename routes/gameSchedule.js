@@ -1,8 +1,8 @@
 const schedule = require("node-schedule");
 const Games = require("../models/game");
 
-// 每隔3s检查倒计时game的状态
-schedule.scheduleJob("*/3 * * * * *", function() {
+// 每隔2s检查倒计时game的状态
+schedule.scheduleJob("*/2 * * * * *", function() {
   countdownQuickGames();
 });
 
