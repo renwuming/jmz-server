@@ -54,7 +54,7 @@ async function handleQuickGame(game) {
     if (stage === 0) {
       currentBattle.questions.forEach((list, index) => {
         if (gameRouter.judgeEmpty(list)) {
-          currentBattle.questions[index] = ["---", "---", "---"];
+          currentBattle.questions[index] = ["--已超时--", "--已超时--", "--已超时--"];
         }
       });
     } else {
