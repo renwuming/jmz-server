@@ -17,7 +17,7 @@ async function getRoom(ctx, next) {
     ctx.state.room = room.toObject();
     await next();
   } catch (e) {
-    console.log(e.toString());
+    console.error(e.toString());
     ctx.body = {
       code: 500
     };
@@ -171,7 +171,6 @@ router.post("/:id/edituserlist/:index", sessionUser, getRoom, async ctx => {
     if (userIndex === 0) {
       const editUser = userList.splice(index, 1);
       roomData.userList = [userList[0], ...editUser, ...userList.slice(1)];
-      console.log(editUser);
       await Rooms.updateOne(
         {
           _id: roomData._id

@@ -34,7 +34,7 @@ router.prefix('/wxweb')
 //   }))
 
 //   if(res.errcode) {
-//     console.log(res.errcode)
+//     console.error(res.errcode)
 //     ctx.body = {}
 //   } else {
 //     // const sessionID = WXBizDataCrypt.randomKey()

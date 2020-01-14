@@ -29,7 +29,7 @@ async function getGame(ctx, next) {
     ctx.state.game = game.toObject();
     await next();
   } catch (e) {
-    console.log(e.toString());
+    console.error(e.toString());
     let error;
     if (!ctx.state.game) {
       error = "游戏ID不存在！";

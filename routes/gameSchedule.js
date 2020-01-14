@@ -2,7 +2,7 @@ const schedule = require("node-schedule");
 const Games = require("../models/game");
 const gameRouter = require("./game");
 
-// 每隔2s检查倒计时game的状态
+// 定时检查倒计时game的状态
 schedule.scheduleJob("*/1 * * * * *", function() {
   countdownQuickGames();
 });
@@ -17,6 +17,7 @@ async function countdownQuickGames() {
 }
 
 async function handleQuickGame(game) {
+  const now = new Date().getTime();
   let { _id, lastStage } = game;
   if (!lastStage) {
     lastStage = {
@@ -25,7 +26,21 @@ async function handleQuickGame(game) {
     };
   }
   const { timeStamp, stage } = lastStage;
-  const now = new Date().getTime();
+  const realStage = handleStageByGame(game);
+  // 若stage已经因为玩家提交而发生变化
+  if (realStage !== stage) {
+    lastStage.stage = realStage;
+    lastStage.timeStamp = now;
+    await Games.findOneAndUpdate(
+      {
+        _id
+      },
+      {
+        lastStage,
+      }
+    );
+    return;
+  }
   const remainingTime =
     gameRouter.stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
   // 已经超时
@@ -79,4 +94,16 @@ async function handleQuickGame(game) {
       }
     );
   }
+}
+
+// 重新计算stage
+function handleStageByGame(game) {
+  const { activeBattle, battles } = game;
+  const currentBattle = battles[activeBattle];
+  const { questions } = currentBattle;
+  const jiamiFull = questions.every(list => !gameRouter.judgeEmpty(list));
+  if (jiamiFull) {
+    return 1;
+  }
+  return 0;
 }
