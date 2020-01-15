@@ -146,13 +146,15 @@ const getGameData = async ctx => {
     if (!lastStage) {
       lastStage = {
         timeStamp: game.timeStamp,
-        stage: 0
+        stage: 0,
+        first: true // 第一个阶段
       };
     }
-    const { timeStamp, stage } = lastStage;
+    const { timeStamp, stage, first } = lastStage;
     const now = new Date().getTime();
-    const remainingTime =
+    let remainingTime =
       stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
+    if (first) remainingTime += 120; // 第一个阶段加时120s
     countdownData = {
       time: remainingTime,
       name: stageMap[stage].name
@@ -184,18 +186,22 @@ const getGameData = async ctx => {
     countdownData
   };
 
-  if (index >= 0 || gameOver) {
-    if (gameOver) {
-      bodyData.enemyWords = teams[1 - teamIndex].words;
+  if (gameOver) {
+    bodyData.enemyWords = teams[1 - teamIndex].words;
+    bodyData.teamWords = teams[teamIndex].words;
+    if (index < 0) {
+      bodyData.observeMode = true;
     }
-    const teamWords = teams[teamIndex].words;
-    bodyData.teamWords = teamWords;
-    ctx.body = bodyData;
   } else {
-    bodyData.teamWords = ["??", "??", "??", "??"];
-    bodyData.observeMode = true;
-    ctx.body = bodyData;
+    if (index >= 0) {
+      bodyData.teamWords = teams[teamIndex].words;
+    } else {
+      bodyData.teamWords = ["??", "??", "??", "??"];
+      bodyData.observeMode = true;
+    }
   }
+
+  ctx.body = bodyData;
 };
 
 function judgeEmpty(list) {

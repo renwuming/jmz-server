@@ -22,31 +22,35 @@ async function handleQuickGame(game) {
   if (!lastStage) {
     lastStage = {
       timeStamp: game.timeStamp,
-      stage: 0
+      stage: 0,
+      first: true // 第一个阶段
     };
   }
-  const { timeStamp, stage } = lastStage;
+  const { timeStamp, stage, first } = lastStage;
   const realStage = handleStageByGame(game);
   // 若stage已经因为玩家提交而发生变化
   if (realStage !== stage) {
     lastStage.stage = realStage;
     lastStage.timeStamp = now;
+    lastStage.first = false;
     await Games.findOneAndUpdate(
       {
         _id
       },
       {
-        lastStage,
+        lastStage
       }
     );
     return;
   }
-  const remainingTime =
+  let remainingTime =
     gameRouter.stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
+  if (first) remainingTime += 120; // 第一个阶段加时120s
   // 已经超时
   if (remainingTime < 0) {
     lastStage.timeStamp = now;
     lastStage.stage = 1 - stage;
+    lastStage.first = false;
 
     const { activeBattle, battles } = game;
     const currentBattle = battles[activeBattle];
@@ -54,7 +58,7 @@ async function handleQuickGame(game) {
     if (stage === 0) {
       currentBattle.questions.forEach((list, index) => {
         if (gameRouter.judgeEmpty(list)) {
-          currentBattle.questions[index] = ["--已超时--", "--已超时--", "--已超时--"];
+          currentBattle.questions[index] = ["【超时】", "【超时】", "【超时】"];
         }
       });
     } else {
