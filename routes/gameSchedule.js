@@ -3,9 +3,11 @@ const Games = require("../models/game");
 const Rooms = require("../models/room");
 const gameRouter = require("./game");
 
-// 定时检查倒计时game的状态
 schedule.scheduleJob("*/1 * * * * *", function() {
+  // 定时检查倒计时game的状态
   countdownQuickGames();
+  // 定时检查room的game是否over
+  checkRoomIsOver();
 });
 
 async function countdownQuickGames() {
@@ -112,11 +114,6 @@ function handleStageByGame(game) {
   }
   return 0;
 }
-
-// 定时检查room的game是否over
-schedule.scheduleJob("*/1 * * * * *", function() {
-  checkRoomIsOver();
-});
 
 async function checkRoomIsOver() {
   const roomList = await Rooms.find({
