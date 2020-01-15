@@ -3,6 +3,7 @@ const Users = require("../models/user");
 const Games = require("../models/game");
 const gameRouter = require("./game");
 const { sessionUser } = require("./middleware");
+const { mode } = require("./config");
 
 router.prefix("/users");
 
@@ -11,7 +12,10 @@ router.get("/", sessionUser, async function(ctx, next) {
 });
 
 router.post("/validate", sessionUser, async function(ctx, next) {
-  ctx.body = handleUserObject(ctx.state.user);
+  ctx.body = {
+    mode,
+    ...handleUserObject(ctx.state.user)
+  };
 });
 
 router.post("/", async function(ctx, next) {
@@ -82,14 +86,18 @@ router.get("/history/games", sessionUser, async function(ctx, next) {
     const gameResult = gameRouter.handleSum(battles);
     const { winner } = gameResult;
     game.status =
-      winner < 0 || winner === undefined ? "平局" : winner === teamIndex ? "胜利" : "失败";
+      winner < 0 || winner === undefined
+        ? "平局"
+        : winner === teamIndex
+        ? "胜利"
+        : "失败";
     result.push(game);
   });
 
   ctx.body = result.sort((a, b) => {
-    const timeStampA = a.timeStamp || 0
-    const timeStampB = b.timeStamp || 0
-    return timeStampB - timeStampA
+    const timeStampA = a.timeStamp || 0;
+    const timeStampB = b.timeStamp || 0;
+    return timeStampB - timeStampA;
   });
 });
 

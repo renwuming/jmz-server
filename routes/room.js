@@ -100,37 +100,6 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
   }
 });
 
-// 修改房间里玩家顺序
-// todo 验证是否为房主
-// router.post("/:id/userList", sessionUser, getRoom, async ctx => {
-//   const { userList } = ctx.request.body;
-//   let roomData = ctx.state.room;
-//   if (roomData) {
-//     roomData.userList = userList;
-//     await Rooms.updateOne(
-//       {
-//         _id: roomData._id
-//       },
-//       roomData
-//     );
-//     ctx.body = {};
-//   } else {
-//     ctx.body = {
-//       code: 500
-//     };
-//   }
-// });
-
-async function stopRoomGame(roomData) {
-  await Rooms.updateOne(
-    {
-      _id: roomData._id
-    },
-    {
-      over: true
-    }
-  );
-}
 
 // 退出房间
 router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
@@ -263,35 +232,12 @@ router.post("/", sessionUser, async (ctx, next) => {
 router.get("/list/wx", sessionUser, async (ctx, next) => {
   const { user } = ctx.state;
   const { _id } = user;
-  let roomList = await Rooms.find({
+  const roomList = await Rooms.find({
     userList: { $elemMatch: { id: _id.toString() } },
     over: { $ne: true }
   });
 
-  roomList = await handleDataWX(roomList);
-
   ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
 });
-
-async function handleDataWX(list) {
-  const L = list.length,
-    resList = [];
-  for (let i = 0; i < L; i++) {
-    const room = list[i];
-    const { userList } = room;
-    if (!userList[0].userInfo) continue;
-    if (room.activeGame) {
-      const game = await Games.findOne({
-        _id: room.activeGame
-      });
-      if (game && game.over) {
-        await stopRoomGame(room);
-        continue;
-      }
-    }
-    resList.push(room);
-  }
-  return resList;
-}
 
 module.exports = router;

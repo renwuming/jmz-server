@@ -1,5 +1,6 @@
 const schedule = require("node-schedule");
 const Games = require("../models/game");
+const Rooms = require("../models/room");
 const gameRouter = require("./game");
 
 // 定时检查倒计时game的状态
@@ -110,4 +111,32 @@ function handleStageByGame(game) {
     return 1;
   }
   return 0;
+}
+
+// 定时检查room的game是否over
+schedule.scheduleJob("*/1 * * * * *", function() {
+  checkRoomIsOver();
+});
+
+async function checkRoomIsOver() {
+  const roomList = await Rooms.find({
+    over: { $ne: true },
+    activeGame: { $exists: true }
+  });
+  roomList.forEach(async room => {
+    const { activeGame, _id } = room;
+    const game = await Games.findOne({
+      _id: activeGame
+    });
+    if (game && game.over) {
+      await Rooms.findOneAndUpdate(
+        {
+          _id
+        },
+        {
+          over: true
+        }
+      );
+    }
+  });
 }
