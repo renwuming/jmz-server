@@ -3,7 +3,7 @@ const Games = require("../models/game");
 const Rooms = require("../models/room");
 const gameRouter = require("./game");
 
-schedule.scheduleJob("*/1 * * * * *", function() {
+schedule.scheduleJob("*/2 * * * * *", function() {
   // 定时检查倒计时game的状态
   countdownQuickGames();
   // 定时检查room的game是否over
