@@ -45,7 +45,7 @@ async function handleQuickGame(game) {
   }
   let remainingTime =
     gameRouter.stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
-  if (first) remainingTime += 120; // 第一个阶段加时120s
+  // if (first) remainingTime += 120; // 第一个阶段加时120s
   // 已经超时
   if (remainingTime < 0) {
     lastStage.timeStamp = now;

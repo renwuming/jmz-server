@@ -154,7 +154,7 @@ const getGameData = async ctx => {
     const now = new Date().getTime();
     let remainingTime =
       stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
-    if (first) remainingTime += 120; // 第一个阶段加时120s
+    // if (first) remainingTime += 120; // 第一个阶段加时120s
     countdownData = {
       time: remainingTime,
       name: stageMap[stage].name
