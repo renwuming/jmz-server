@@ -99,7 +99,6 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
   }
 });
 
-
 // 退出房间
 router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
@@ -230,10 +229,16 @@ router.post("/", sessionUser, async (ctx, next) => {
 router.get("/list/wx", sessionUser, async (ctx, next) => {
   const { user } = ctx.state;
   const { _id } = user;
-  const roomList = await Rooms.find({
-    userList: { $elemMatch: { id: _id.toString() } },
-    over: { $ne: true }
-  });
+  const roomList = await Rooms.find(
+    {
+      userList: { $elemMatch: { id: _id.toString() } },
+      over: { $ne: true }
+    },
+    {
+      timeStamp: 1,
+      userList: 1
+    }
+  );
 
   ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
 });

@@ -17,7 +17,7 @@ async function countdownQuickGames() {
       over: { $ne: true },
       lock: { $ne: true }
     },
-    { _id: 1, lastStage: 1, activeBattle: 1, battles: 1 }
+    { lastStage: 1, activeBattle: 1, battles: 1 }
   );
   quickGames.forEach(game => handleQuickGame(game));
 }
@@ -125,8 +125,7 @@ async function checkRoomIsOver() {
       activeGame: { $exists: true }
     },
     {
-      activeGame: 1,
-      _id: 1
+      activeGame: 1
     }
   );
   roomList.forEach(async room => {
