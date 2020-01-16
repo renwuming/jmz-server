@@ -163,7 +163,7 @@ const getGameData = async ctx => {
 
   const bodyData = {
     userIndex: index,
-    userList: game.userList.map(user => user.userInfo),
+    userList: game.userList.map(user => ({ id: user.id, ...user.userInfo })),
     teamNames,
     battleData,
     battle: battleList,
@@ -534,7 +534,7 @@ function createBattle(lastBattle) {
 
 function getCodes() {
   const list = [0, 1, 2, 3];
-  const del = Math.ceil(Math.random() * 4) - 1;
+  const del = Math.floor(Math.random() * 4);
   list.splice(del, 1);
   return list.shuffle();
 }
@@ -545,7 +545,7 @@ async function getWords() {
 }
 
 Array.prototype.shuffle = function() {
-  return this.sort(_ => Math.random() - 0.5);
+  return this.sort(_ => Math.random() - 0.5).sort(_ => Math.random() - 0.5);
 };
 
 // 小程序 - 获取所有游戏数据

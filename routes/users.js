@@ -7,8 +7,18 @@ const { mode } = require("./config");
 
 router.prefix("/users");
 
-router.get("/", sessionUser, async function(ctx, next) {
-  ctx.body = handleUserObject(ctx.state.user);
+router.get("/gamedata/:id", sessionUser, async function(ctx, next) {
+  const { id } = ctx.params;
+  const list = await gameHistoryData(id);
+  const Sum = list.length;
+  let winSum = 0;
+  list.forEach(item => {
+    if (item.status === "胜利") {
+      winSum++;
+    }
+  });
+  const winRate = (winSum / Sum).toFixed(2) * 100;
+  ctx.body = `胜率 ${winRate}%\n总局数 ${Sum}\n获胜局数 ${winSum}`;
 });
 
 router.post("/validate", sessionUser, async function(ctx, next) {
@@ -72,8 +82,13 @@ router.getWxUser = async id => {
 router.get("/history/games", sessionUser, async function(ctx, next) {
   let { _id } = ctx.state.user;
   _id = _id.toString();
+
+  ctx.body = await gameHistoryData(_id);
+});
+
+async function gameHistoryData(id) {
   const games = await Games.find({
-    userList: { $elemMatch: { id: _id.toString() } },
+    userList: { $elemMatch: { id } },
     over: true
   });
   const result = [];
@@ -81,7 +96,7 @@ router.get("/history/games", sessionUser, async function(ctx, next) {
     game = game.toObject();
     let { userList, battles } = game;
     userList = userList.map(e => e.id.toString());
-    const userIndex = userList.indexOf(_id);
+    const userIndex = userList.indexOf(id);
     const teamIndex = userIndex >= 2 ? 1 : 0;
     const gameResult = gameRouter.handleSum(battles);
     const { winner } = gameResult;
@@ -93,12 +108,11 @@ router.get("/history/games", sessionUser, async function(ctx, next) {
         : "失败";
     result.push(game);
   });
-
-  ctx.body = result.sort((a, b) => {
+  return result.sort((a, b) => {
     const timeStampA = a.timeStamp || 0;
     const timeStampB = b.timeStamp || 0;
     return timeStampB - timeStampA;
   });
-});
+}
 
 module.exports = router;
