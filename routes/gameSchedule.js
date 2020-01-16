@@ -3,7 +3,7 @@ const Games = require("../models/game");
 const Rooms = require("../models/room");
 const gameRouter = require("./game");
 
-schedule.scheduleJob("*/2 * * * * *", function() {
+schedule.scheduleJob("*/1 * * * * *", function() {
   // 定时检查倒计时game的状态
   countdownQuickGames();
   // 定时检查room的game是否over
@@ -11,11 +11,14 @@ schedule.scheduleJob("*/2 * * * * *", function() {
 });
 
 async function countdownQuickGames() {
-  const quickGames = await Games.find({
-    quickMode: true,
-    over: { $ne: true },
-    lock: { $ne: true }
-  }).exec();
+  const quickGames = await Games.find(
+    {
+      quickMode: true,
+      over: { $ne: true },
+      lock: { $ne: true }
+    },
+    { _id: 1, lastStage: 1, activeBattle: 1, battles: 1 }
+  );
   quickGames.forEach(game => handleQuickGame(game));
 }
 
@@ -116,16 +119,32 @@ function handleStageByGame(game) {
 }
 
 async function checkRoomIsOver() {
-  const roomList = await Rooms.find({
-    over: { $ne: true },
-    activeGame: { $exists: true }
-  });
+  const roomList = await Rooms.find(
+    {
+      over: { $ne: true },
+      activeGame: { $exists: true }
+    },
+    {
+      activeGame: 1,
+      _id: 1
+    }
+  );
   roomList.forEach(async room => {
     const { activeGame, _id } = room;
     const game = await Games.findOne({
       _id: activeGame
     });
-    if (game && game.over) {
+    if (!game) {
+      await Rooms.findOneAndUpdate(
+        {
+          _id
+        },
+        {
+          activeGame: null,
+          over: false
+        }
+      );
+    } else if (game.over) {
       await Rooms.findOneAndUpdate(
         {
           _id

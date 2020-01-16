@@ -70,7 +70,7 @@ router.post("/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
 
 // 加入房间
 router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
-  const { _id, nick, userInfo } = ctx.state.user;
+  const { _id, userInfo } = ctx.state.user;
   let roomData = ctx.state.room;
   if (roomData) {
     let flag = true; // 是否需要插入user数据
@@ -82,7 +82,6 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
     if (flag) {
       roomData.userList.push({
         id: _id,
-        nick,
         userInfo
       });
       await Rooms.updateOne(
@@ -103,7 +102,7 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
 
 // 退出房间
 router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
-  const { _id, nick } = ctx.state.user;
+  const { _id } = ctx.state.user;
   let roomData = ctx.state.room;
 
   if (roomData) {
@@ -209,13 +208,12 @@ async function updateAndHandleUserList(list) {
 
 // 创建房间
 router.post("/", sessionUser, async (ctx, next) => {
-  const { _id, nick, userInfo } = ctx.state.user;
+  const { _id, userInfo } = ctx.state.user;
   let room = await Rooms.create({
     timeStamp: +new Date(),
     userList: [
       {
         id: _id,
-        nick,
         userInfo
       }
     ],

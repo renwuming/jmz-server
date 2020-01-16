@@ -12,7 +12,6 @@ const sessionUser = async function(ctx, next) {
         ticket
       }
     });
-    user.nick = user.userInfo.nickname;
     ctx.state.user = user;
     await next();
   } catch(error) {
