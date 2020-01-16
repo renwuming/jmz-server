@@ -17,7 +17,7 @@ router.get("/gamedata/:id", sessionUser, async function(ctx, next) {
       winSum++;
     }
   });
-  const winRate = Math.round((winSum / Sum).toFixed(2) * 100);
+  const winRate = Sum === 0 ? 0 : Math.round((winSum / Sum).toFixed(2) * 100);
   ctx.body = {
     winRate,
     winSum,
