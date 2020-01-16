@@ -18,7 +18,11 @@ router.get("/gamedata/:id", sessionUser, async function(ctx, next) {
     }
   });
   const winRate = Math.round((winSum / Sum).toFixed(2) * 100);
-  ctx.body = `胜率 ${winRate}%\n总局数 ${Sum}\n获胜局数 ${winSum}`;
+  ctx.body = {
+    winRate,
+    winSum,
+    Sum
+  };
 });
 
 router.post("/validate", sessionUser, async function(ctx, next) {
