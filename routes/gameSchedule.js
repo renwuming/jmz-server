@@ -53,6 +53,7 @@ async function handleQuickGame(game) {
     gameRouter.stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
   // if (first) remainingTime += 120; // 第一个阶段加时120s
   // 已经超时
+  console.log(remainingTime);
   if (remainingTime < 0) {
     lastStage.timeStamp = now;
     lastStage.stage = 1 - stage;
