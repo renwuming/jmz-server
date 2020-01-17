@@ -433,6 +433,21 @@ async function updateGameAfterSubmit(activeBattle, newBattleData, game) {
     activeBattle++;
   }
 
+  // 判断游戏是否结束
+  const gameResult = handleSum(game.battles);
+  let { gameOver } = gameResult;
+  if (gameOver && !game.over) {
+    // 若游戏已结束，更新数据库
+    await Games.findOneAndUpdate(
+      {
+        _id: game._id
+      },
+      {
+        over: gameOver
+      }
+    );
+  }
+
   await Games.findOneAndUpdate(
     {
       _id: game._id

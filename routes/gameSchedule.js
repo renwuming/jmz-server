@@ -53,11 +53,7 @@ async function handleQuickGame(game) {
     gameRouter.stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
   // if (first) remainingTime += 120; // 第一个阶段加时120s
   // 已经超时
-  if (remainingTime < 0) {
-    lastStage.timeStamp = now;
-    lastStage.stage = 1 - stage;
-    lastStage.first = false;
-
+  if (remainingTime < -2) {
     const { activeBattle, battles } = game;
     const currentBattle = battles[activeBattle];
     // 超时的为加密阶段
@@ -65,6 +61,8 @@ async function handleQuickGame(game) {
       currentBattle.questions.forEach((list, index) => {
         if (gameRouter.judgeEmpty(list)) {
           currentBattle.questions[index] = ["【超时】", "【超时】", "【超时】"];
+          currentBattle.jiemiAnswers[index] = [4, 4, 4];
+          currentBattle.lanjieAnswers[index] = [4, 4, 4];
         }
       });
     } else {
@@ -82,7 +80,6 @@ async function handleQuickGame(game) {
         });
       }
     }
-
     // 先为此game上锁
     await Games.findOneAndUpdate(
       {
@@ -93,6 +90,16 @@ async function handleQuickGame(game) {
       }
     );
     await gameRouter.updateGameAfterSubmit(activeBattle, currentBattle, game);
+    // 更新lastStage
+    const newGame = await Games.findOne(
+      {
+        _id
+      },
+      { activeBattle: 1, battles: 1 }
+    );
+    lastStage.timeStamp = now;
+    lastStage.stage = handleStageByGame(newGame);
+    lastStage.first = false;
     await Games.findOneAndUpdate(
       {
         _id
