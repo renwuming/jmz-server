@@ -1225,7 +1225,9 @@ const codes = [
   "WIFI",
   "光头",
   "阿拉丁神灯",
-  "指纹"
+  "指纹",
+  "头绳",
+  "手链"
 ];
 
 module.exports = codes;
