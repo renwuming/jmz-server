@@ -87,7 +87,11 @@ router.get("/history/games", sessionUser, async function(ctx, next) {
   let { _id } = ctx.state.user;
   _id = _id.toString();
 
-  ctx.body = await gameHistoryData(_id);
+  const list = await gameHistoryData(_id);
+  ctx.body = list.map(item => {
+    const { _id, userList, status } = item;
+    return { _id, userList, status };
+  });
 });
 
 async function gameHistoryData(id) {
