@@ -8,19 +8,29 @@ const { mode } = require("./config");
 router.prefix("/users");
 
 router.get("/gamedata/:id", sessionUser, async function(ctx, next) {
-  const { id } = ctx.params;
+  let { id } = ctx.params;
+  if (id === "self") {
+    id = ctx.state.user._id;
+  }
   const list = await gameHistoryData(id);
   const Sum = list.length;
   let winSum = 0;
+  let pingSum = 0;
   list.forEach(item => {
     if (item.status === "胜利") {
       winSum++;
     }
+    if (item.status === "平局") {
+      pingSum++;
+    }
   });
-  const winRate = Sum === 0 ? 0 : Math.round((winSum / Sum).toFixed(2) * 100);
+  const realSum = Sum - pingSum;
+  const winRate =
+    realSum === 0 ? 0 : Math.round((winSum / realSum).toFixed(2) * 100);
   ctx.body = {
     winRate,
     winSum,
+    pingSum,
     Sum
   };
 });
