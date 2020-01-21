@@ -508,7 +508,7 @@ router.updateGameAfterSubmit = updateGameAfterSubmit;
 router.judgeEmpty = judgeEmpty;
 
 function getTeamNames() {
-  return ["马里奥", "酷霸王"];
+  return ["潜伏战线", "军情处"];
 }
 
 function createBattle(lastBattle) {
