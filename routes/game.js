@@ -124,7 +124,6 @@ const getGameData = async ctx => {
   const table1 = getHistoryTable(history1);
   const table2 = getHistoryTable(history2);
   const gameResult = handleSum(battles);
-  const teamNames = teams.map(t => t.name);
   let { sumList, gameOver, winner, resultMap } = gameResult;
   if (gameOver && !over) {
     // 若游戏已结束，更新数据库
@@ -164,7 +163,7 @@ const getGameData = async ctx => {
   const bodyData = {
     userIndex: index,
     userList: game.userList.map(user => ({ id: user.id, ...user.userInfo })),
-    teamNames,
+    teamNames: getTeamNames(),
     battleData,
     battle: battleList,
     history: history1,
