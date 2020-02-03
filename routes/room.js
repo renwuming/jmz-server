@@ -243,4 +243,25 @@ router.get("/list/wx", sessionUser, async (ctx, next) => {
   ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
 });
 
+// 获取我在的房间列表 - 分页
+router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
+  const { pageNum } = ctx.params;
+  const Min = pageNum * 10;
+  const Max = Min + 10;
+  const { user } = ctx.state;
+  const { _id } = user;
+  const roomList = await Rooms.find(
+    {
+      userList: { $elemMatch: { id: _id.toString() } },
+      over: { $ne: true }
+    },
+    {
+      timeStamp: 1,
+      userList: 1
+    }
+  ).sort({ timeStamp: -1 });
+
+  ctx.body = roomList.slice(Min, Max);
+});
+
 module.exports = router;

@@ -62,7 +62,7 @@ const getGameData = async ctx => {
     lanjieAnswers
   } = battle;
   questionStrList = questions.map(question =>
-    question ? question.map(str => str.replace(/\n|\s/g, "")) : ["", "", ""]
+    question ? question.map(str => str.trim()) : ["", "", ""]
   );
 
   // 处理battle数据
