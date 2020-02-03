@@ -520,9 +520,7 @@ function createBattle(lastBattle) {
   // 第一回合，无拦截
   const lanjieUsers =
     newBattle > 0
-      ? jiemiUsers.map(jiemiIndex =>
-          jiemiIndex >= 2 ? jiemiIndex - 2 : jiemiIndex + 2
-        )
+      ? desUsers.map(index => (index >= 2 ? index - 2 : index + 2))
       : [-1, -1];
   return {
     desUsers,
