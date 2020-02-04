@@ -99,6 +99,52 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
   }
 });
 
+// 随机匹配一个房间
+router.post("/join/random", sessionUser, async (ctx, next) => {
+  const { _id } = ctx.state.user;
+  const userID = _id.toString();
+  // 先查询3人房间
+  let list = await Rooms.find({
+    userList: { $not: { $elemMatch: { id: userID } } },
+    "userList.2": { $exists: 1 },
+    "userList.3": { $exists: 0 },
+    over: { $ne: true },
+    activeGame: { $exists: false }
+  });
+  if (list.length <= 0) {
+    // 查询2人房间
+    list = await Rooms.find({
+      userList: { $not: { $elemMatch: { id: userID } } },
+      "userList.1": { $exists: 1 },
+      "userList.3": { $exists: 0 },
+      over: { $ne: true },
+      activeGame: { $exists: false }
+    });
+  }
+  if (list.length <= 0) {
+    // 查询1人房间
+    list = await Rooms.find({
+      userList: { $not: { $elemMatch: { id: userID } } },
+      "userList.0": { $exists: 1 },
+      "userList.3": { $exists: 0 },
+      over: { $ne: true },
+      activeGame: { $exists: false }
+    });
+  }
+  if (list.length > 0) {
+    list.shuffle();
+    const id = list[0]._id;
+    ctx.body = {
+      id
+    };
+  } else {
+    ctx.body = {
+      code: 502,
+      error: "目前没有合适的房间哦~"
+    };
+  }
+});
+
 // 退出房间
 router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
@@ -250,18 +296,36 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
   const Max = Min + 10;
   const { user } = ctx.state;
   const { _id } = user;
-  const roomList = await Rooms.find(
+  const gamingRoomList = await Rooms.find(
     {
       userList: { $elemMatch: { id: _id.toString() } },
-      over: { $ne: true }
+      over: { $ne: true },
+      activeGame: { $exists: true },
     },
     {
       timeStamp: 1,
-      userList: 1
+      userList: 1,
+      activeGame: 1
     }
   ).sort({ timeStamp: -1 });
 
-  ctx.body = roomList.slice(Min, Max);
+
+  const roomList = await Rooms.find(
+    {
+      userList: { $elemMatch: { id: _id.toString() } },
+      over: { $ne: true },
+      activeGame: { $exists: false },
+    },
+    {
+      timeStamp: 1,
+      userList: 1,
+      activeGame: 1
+    }
+  ).sort({ timeStamp: -1 });
+
+  const resList = gamingRoomList.concat(roomList)
+
+  ctx.body = resList.slice(Min, Max);
 });
 
 module.exports = router;

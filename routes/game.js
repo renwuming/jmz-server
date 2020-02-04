@@ -557,7 +557,13 @@ async function getWords() {
 }
 
 Array.prototype.shuffle = function() {
-  return this.sort(_ => Math.random() - 0.5).sort(_ => Math.random() - 0.5);
+  for (let t, j, i = this.length; i; ) {
+    j = Math.floor(Math.random() * i); // 在前i项中随机取一项，与第i项交换
+    t = this[--i];
+    this[i] = this[j];
+    this[j] = t;
+  }
+  return this;
 };
 
 // 小程序 - 获取所有游戏数据
