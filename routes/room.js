@@ -103,13 +103,16 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
 router.post("/join/random", sessionUser, async (ctx, next) => {
   const { _id } = ctx.state.user;
   const userID = _id.toString();
+  // 一小时以内的房间
+  const TimeStamp = new Date().getTime() - 60 * 60 * 1000;
   // 先查询3人房间
   let list = await Rooms.find({
     userList: { $not: { $elemMatch: { id: userID } } },
     "userList.2": { $exists: 1 },
     "userList.3": { $exists: 0 },
     over: { $ne: true },
-    activeGame: { $exists: false }
+    activeGame: { $exists: false },
+    timeStamp: { $gt: TimeStamp }
   });
   if (list.length <= 0) {
     // 查询2人房间
@@ -289,29 +292,22 @@ router.get("/list/wx", sessionUser, async (ctx, next) => {
   ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
 });
 
-// 获取我在的房间列表 - 分页
+// 获取正在进行的游戏、未开始的房间列表 - 分页
 router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
   const { pageNum } = ctx.params;
   const Min = pageNum * 10;
   const Max = Min + 10;
   const { user } = ctx.state;
   const { _id } = user;
-  const gamingRoomList = await Rooms.find(
-    {
-      userList: { $elemMatch: { id: _id.toString() } },
-      over: { $ne: true },
-      activeGame: { $exists: true, $ne: null }
-    },
-    {
-      timeStamp: 1,
-      userList: 1,
-      activeGame: 1
-    }
-  ).sort({ timeStamp: -1 });
+  const userID = _id.toString();
+  const gameList = await Games.find({
+    userList: { $elemMatch: { id: userID } },
+    over: { $ne: true }
+  }).sort({ timeStamp: -1 });
 
   const roomList = await Rooms.find(
     {
-      userList: { $elemMatch: { id: _id.toString() } },
+      userList: { $elemMatch: { id: userID } },
       over: { $ne: true },
       activeGame: { $in: [undefined, null] }
     },
@@ -322,8 +318,7 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
     }
   ).sort({ timeStamp: -1 });
 
-  const resList = gamingRoomList.concat(roomList);
-
+  const resList = gameList.concat(roomList);
   ctx.body = resList.slice(Min, Max);
 });
 

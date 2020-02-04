@@ -122,7 +122,8 @@ async function gameHistoryData(id) {
   const games = await Games.find({
     userList: { $elemMatch: { id } },
     over: true
-  });
+  }).sort({ timeStamp: -1 });
+
   const result = [];
   games.forEach(game => {
     game = game.toObject();
@@ -140,11 +141,7 @@ async function gameHistoryData(id) {
         : "失败";
     result.push(game);
   });
-  return result.sort((a, b) => {
-    const timeStampA = a.timeStamp || 0;
-    const timeStampB = b.timeStamp || 0;
-    return timeStampB - timeStampA;
-  });
+  return result;
 }
 
 module.exports = router;
