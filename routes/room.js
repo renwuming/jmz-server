@@ -292,8 +292,47 @@ router.get("/list/wx", sessionUser, async (ctx, next) => {
   ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
 });
 
-// 获取正在进行的游戏、未开始的房间列表 - 分页
+
+// 获取我在的房间列表 - 分页
 router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
+  const { pageNum } = ctx.params;
+  const Min = pageNum * 10;
+  const Max = Min + 10;
+  const { user } = ctx.state;
+  const { _id } = user;
+  const gamingRoomList = await Rooms.find(
+    {
+      userList: { $elemMatch: { id: _id.toString() } },
+      over: { $ne: true },
+      activeGame: { $exists: true, $ne: null }
+    },
+    {
+      timeStamp: 1,
+      userList: 1,
+      activeGame: 1
+    }
+  ).sort({ timeStamp: -1 });
+
+  const roomList = await Rooms.find(
+    {
+      userList: { $elemMatch: { id: _id.toString() } },
+      over: { $ne: true },
+      activeGame: { $in: [undefined, null] }
+    },
+    {
+      timeStamp: 1,
+      userList: 1,
+      activeGame: 1
+    }
+  ).sort({ timeStamp: -1 });
+
+  const resList = gamingRoomList.concat(roomList);
+
+  ctx.body = resList.slice(Min, Max);
+});
+
+// 获取正在进行的游戏、未开始的房间列表 - 分页
+router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
   const { pageNum } = ctx.params;
   const Min = pageNum * 10;
   const Max = Min + 10;
