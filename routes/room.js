@@ -292,7 +292,6 @@ router.get("/list/wx", sessionUser, async (ctx, next) => {
   ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
 });
 
-
 // 获取我在的房间列表 - 分页
 router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
   const { pageNum } = ctx.params;
@@ -373,11 +372,15 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
 
   const resList = gameList.concat(roomList).slice(Min, Max);
 
+  // 处理旁观中
   resList.forEach((item, index) => {
-    const { userList } = item;
-    const userIndex = userList.map(e => e.id).indexOf(userID);
-    if (userIndex >= 0 && userIndex <= 3) {
-      resList[index].inGame = true;
+    const { activeGame, userList } = item;
+    // 若已有游戏的房间，则是旁观中
+    if (activeGame) {
+      const userIndex = userList.map(e => e.id).indexOf(userID);
+      if (userIndex > 3) {
+        resList[index].observe = true;
+      }
     }
   });
   ctx.body = resList;
