@@ -300,7 +300,7 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
     {
       userList: { $elemMatch: { id: _id.toString() } },
       over: { $ne: true },
-      activeGame: { $exists: true },
+      activeGame: { $exists: true, $ne: null }
     },
     {
       timeStamp: 1,
@@ -308,13 +308,12 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
       activeGame: 1
     }
   ).sort({ timeStamp: -1 });
-
 
   const roomList = await Rooms.find(
     {
       userList: { $elemMatch: { id: _id.toString() } },
       over: { $ne: true },
-      activeGame: { $exists: false },
+      activeGame: { $in: [undefined, null] }
     },
     {
       timeStamp: 1,
@@ -323,7 +322,7 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
     }
   ).sort({ timeStamp: -1 });
 
-  const resList = gamingRoomList.concat(roomList)
+  const resList = gamingRoomList.concat(roomList);
 
   ctx.body = resList.slice(Min, Max);
 });
