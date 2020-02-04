@@ -303,7 +303,9 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
   const gameList = await Games.find({
     userList: { $elemMatch: { id: userID } },
     over: { $ne: true }
-  }).sort({ timeStamp: -1 });
+  })
+    .sort({ timeStamp: -1 })
+    .lean();
 
   const roomList = await Rooms.find(
     {
@@ -316,10 +318,20 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
       userList: 1,
       activeGame: 1
     }
-  ).sort({ timeStamp: -1 });
+  )
+    .sort({ timeStamp: -1 })
+    .lean();
 
-  const resList = gameList.concat(roomList);
-  ctx.body = resList.slice(Min, Max);
+  const resList = gameList.concat(roomList).slice(Min, Max);
+
+  resList.forEach((item, index) => {
+    const { userList } = item;
+    const userIndex = userList.map(e => e.id).indexOf(userID);
+    if (userIndex >= 0 && userIndex <= 3) {
+      resList[index].inGame = true;
+    }
+  });
+  ctx.body = resList;
 });
 
 module.exports = router;
