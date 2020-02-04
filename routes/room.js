@@ -346,11 +346,10 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
     .sort({ timeStamp: -1 })
     .lean();
 
-  const roomList = await Rooms.find(
+  let roomList = await Rooms.find(
     {
       userList: { $elemMatch: { id: userID } },
-      over: { $ne: true },
-      activeGame: { $in: [undefined, null] }
+      over: { $ne: true }
     },
     {
       timeStamp: 1,
@@ -360,6 +359,17 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
   )
     .sort({ timeStamp: -1 })
     .lean();
+
+  // 筛掉已经在游戏中的房间
+  const gameIdList = gameList.map(e => e._id.toString());
+  roomList = roomList.filter(item => {
+    const { activeGame } = item;
+    if (activeGame) {
+      return !gameIdList.includes(item.activeGame);
+    } else {
+      return true;
+    }
+  });
 
   const resList = gameList.concat(roomList).slice(Min, Max);
 
