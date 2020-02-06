@@ -368,7 +368,7 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
   });
   if (keyError) {
     const errorList = keyErrorList
-      .map(index => `第${index + 1}个内容`)
+      .map(index => `第${index + 1}个内容【${qList[index]}】`)
       .join("，");
     ctx.body = {
       code: 501,
