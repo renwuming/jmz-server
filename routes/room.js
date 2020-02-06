@@ -99,54 +99,6 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
   }
 });
 
-// 随机匹配一个房间
-router.post("/join/random", sessionUser, async (ctx, next) => {
-  const { _id } = ctx.state.user;
-  const userID = _id.toString();
-  // 一小时以内的房间
-  const TimeStamp = new Date().getTime() - 60 * 60 * 1000;
-  // 先查询3人房间
-  let list = await Rooms.find({
-    userList: { $not: { $elemMatch: { id: userID } } },
-    "userList.2": { $exists: 1 },
-    "userList.3": { $exists: 0 },
-    over: { $ne: true },
-    activeGame: { $exists: false },
-    timeStamp: { $gt: TimeStamp }
-  });
-  if (list.length <= 0) {
-    // 查询2人房间
-    list = await Rooms.find({
-      userList: { $not: { $elemMatch: { id: userID } } },
-      "userList.1": { $exists: 1 },
-      "userList.3": { $exists: 0 },
-      over: { $ne: true },
-      activeGame: { $exists: false }
-    });
-  }
-  if (list.length <= 0) {
-    // 查询1人房间
-    list = await Rooms.find({
-      userList: { $not: { $elemMatch: { id: userID } } },
-      "userList.0": { $exists: 1 },
-      "userList.3": { $exists: 0 },
-      over: { $ne: true },
-      activeGame: { $exists: false }
-    });
-  }
-  if (list.length > 0) {
-    list.shuffle();
-    const id = list[0]._id;
-    ctx.body = {
-      id
-    };
-  } else {
-    ctx.body = {
-      code: 502,
-      error: "目前没有合适的房间哦~"
-    };
-  }
-});
 
 // 退出房间
 router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
