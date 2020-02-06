@@ -32,8 +32,8 @@ async function handleQuickGame(game) {
       first: true // 第一个阶段
     };
   }
-  const { timeStamp, stage, first } = lastStage;
-  const realStage = handleStageByGame(game);
+  const { timeStamp, stage } = lastStage;
+  const realStage = gameRouter.handleStageByGame(game);
   // 若stage已经因为玩家提交而发生变化
   if (realStage !== stage) {
     lastStage.stage = realStage;
@@ -51,7 +51,6 @@ async function handleQuickGame(game) {
   }
   let remainingTime =
     gameRouter.stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
-  // if (first) remainingTime += 120; // 第一个阶段加时120s
   // 已经超时
   if (remainingTime < -2) {
     const { activeBattle, battles } = game;
@@ -98,7 +97,7 @@ async function handleQuickGame(game) {
       { activeBattle: 1, battles: 1 }
     );
     lastStage.timeStamp = now;
-    lastStage.stage = handleStageByGame(newGame);
+    lastStage.stage = gameRouter.handleStageByGame(newGame);
     lastStage.first = false;
     await Games.findOneAndUpdate(
       {
@@ -111,18 +110,6 @@ async function handleQuickGame(game) {
       }
     );
   }
-}
-
-// 重新计算stage
-function handleStageByGame(game) {
-  const { activeBattle, battles } = game;
-  const currentBattle = battles[activeBattle];
-  const { questions } = currentBattle;
-  const jiamiFull = questions.every(list => !gameRouter.judgeEmpty(list));
-  if (jiamiFull) {
-    return 1;
-  }
-  return 0;
 }
 
 async function checkRoomIsOver() {

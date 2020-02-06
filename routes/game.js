@@ -149,11 +149,10 @@ const getGameData = async ctx => {
         first: true // 第一个阶段
       };
     }
-    const { timeStamp, stage, first } = lastStage;
+    const { timeStamp, stage } = lastStage;
     const now = new Date().getTime();
     let remainingTime =
       stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
-    // if (first) remainingTime += 120; // 第一个阶段加时120s
     countdownData = {
       time: remainingTime,
       name: stageMap[stage].name
@@ -182,7 +181,8 @@ const getGameData = async ctx => {
     teamIndex,
     lanjieUsers,
     quickMode,
-    countdownData
+    countdownData,
+    stageName: stageMap[handleStageByGame(game)].name
   };
 
   if (gameOver) {
@@ -202,6 +202,18 @@ const getGameData = async ctx => {
 
   ctx.body = bodyData;
 };
+
+// 重新计算stage
+function handleStageByGame(game) {
+  const { activeBattle, battles } = game;
+  const currentBattle = battles[activeBattle];
+  const { questions } = currentBattle;
+  const jiamiFull = questions.every(list => !judgeEmpty(list));
+  if (jiamiFull) {
+    return 1;
+  }
+  return 0;
+}
 
 function judgeEmpty(list) {
   const type = typeof list[0];
@@ -502,6 +514,7 @@ router.gameInit = async function(userList, randomMode, quickMode) {
   return data;
 };
 
+router.handleStageByGame = handleStageByGame;
 router.handleSum = handleSum;
 router.updateGameAfterSubmit = updateGameAfterSubmit;
 router.judgeEmpty = judgeEmpty;
