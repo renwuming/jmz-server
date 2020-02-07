@@ -520,7 +520,7 @@ router.updateGameAfterSubmit = updateGameAfterSubmit;
 router.judgeEmpty = judgeEmpty;
 
 function getTeamNames() {
-  return ["潜伏战线", "军情处"];
+  return ["潜伏者", "军情处"];
 }
 
 function createBattle(lastBattle) {
