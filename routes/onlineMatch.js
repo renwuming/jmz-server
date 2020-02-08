@@ -5,7 +5,7 @@ const getCache = require("./cache");
 
 router.prefix("/online");
 
-const SuccessLength = 2; // debug
+const SuccessLength = 4; // 4人则分组成功
 router.SuccessLength = SuccessLength;
 router.cancelMatch = cancelMatch;
 
