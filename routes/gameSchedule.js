@@ -5,8 +5,8 @@ const gameRouter = require("./game");
 const matchRouter = require("./onlineMatch");
 const getCache = require("./cache");
 
-// 匹配成功10s后，开始游戏
-const MATCH_WAIT_TIME = 10 * 1000;
+// 匹配成功一段时间后，开始游戏
+const MATCH_WAIT_TIME = 6 * 1000;
 
 schedule.scheduleJob("*/1 * * * * *", function() {
   // 定时检查倒计时game的状态
