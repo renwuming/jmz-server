@@ -4,6 +4,7 @@ const Games = require("../models/game");
 const gameRouter = require("./game");
 const { sessionUser } = require("./middleware");
 const { mode } = require("./config");
+const getCache = require("./cache");
 
 router.prefix("/users");
 
@@ -36,9 +37,25 @@ router.get("/gamedata/:id", sessionUser, async function(ctx, next) {
 });
 
 router.post("/validate", sessionUser, async function(ctx, next) {
+  // 获取在线匹配的数据
+  const cache = getCache();
+  const { _id } = ctx.state.user;
+  const userID = _id.toString();
+  const matchData = cache.get(userID) || {};
+  const { activeGame } = matchData;
+  // 判断game是否已结束
+  if (activeGame) {
+    const game = await Games.findOne({ _id: activeGame });
+    if (!game || game.over) {
+      matchData.activeGame = null;
+      cache.set(userID, matchData);
+    }
+  }
+
   ctx.body = {
     mode,
-    ...handleUserObject(ctx.state.user)
+    ...handleUserObject(ctx.state.user),
+    onlineMatch: matchData.activeGame
   };
 });
 
