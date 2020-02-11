@@ -1,4 +1,4 @@
-const Koa = require("koa");
+const Koa = require("koa2");
 const app = new Koa();
 const views = require("koa-views");
 const json = require("koa-json");
@@ -9,6 +9,7 @@ const session = require("koa-session");
 const cors = require("koa2-cors");
 const mongoose = require("mongoose");
 require("./routes/gameSchedule");
+require("./routes/websocket");
 
 const index = require("./routes/index");
 const users = require("./routes/users");

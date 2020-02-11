@@ -1,28 +1,28 @@
-const request = require("request-promise");
-const { validateUrl_wx } = require("./config");
+const request = require('request-promise');
+const { validateUrl_wx } = require('./config');
 
 const sessionUser = async function(ctx, next) {
-  const ticket = ctx.headers["x-ticket"];
+  const ticket = ctx.request.header['x-ticket'];
   try {
     const user = await request({
       url: validateUrl_wx,
-      method: "POST",
+      method: 'POST',
       json: true,
       body: {
-        ticket
-      }
+        ticket,
+      },
     });
     ctx.state.user = user;
     await next();
-  } catch(error) {
-    console.error(error)
+  } catch (error) {
+    console.error(error);
     ctx.body = {
       code: 408,
-      error: "登录超时"
+      error: '登录超时',
     };
   }
 };
 
 module.exports = {
-  sessionUser
+  sessionUser,
 };

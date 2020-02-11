@@ -1,31 +1,31 @@
-const router = require("koa-router")();
-const Games = require("../models/game");
-const Rooms = require("../models/room");
-const { sessionUser } = require("./middleware");
-const GameRouter = require("./game");
-const UserRouter = require("./users");
-const MODE = require("./config").mode;
+const router = require('koa-router')();
+const Games = require('../models/game');
+const Rooms = require('../models/room');
+const { sessionUser } = require('./middleware');
+const GameRouter = require('./game');
+const UserRouter = require('./users');
+const MODE = require('./config').mode;
 
-router.prefix("/rooms");
+router.prefix('/rooms');
 
 async function getRoom(ctx, next) {
   const { id } = ctx.params;
   try {
     let room = await Rooms.findOne({
-      _id: id
+      _id: id,
     });
     ctx.state.room = room.toObject();
     await next();
   } catch (e) {
     console.error(e.toString());
     ctx.body = {
-      code: 500
+      code: 500,
     };
   }
 }
 
 // 小程序 - 开始某房间的游戏
-router.post("/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
+router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
   const { randomMode, quickMode } = ctx.request.body;
   const roomData = ctx.state.room;
@@ -35,7 +35,7 @@ router.post("/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
   const ownRoom = roomOwnerID == _id;
 
   const playerFlag =
-    MODE === "game"
+    MODE === 'game'
       ? userList.length >= 4
       : userList.length === 1 || userList.length >= 4;
 
@@ -43,33 +43,33 @@ router.post("/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
     const gameData = await GameRouter.gameInit(
       userList.slice(0, 4),
       randomMode,
-      quickMode
+      quickMode,
     );
     const game = await Games.create(gameData);
     const newGameId = game._id;
     await Rooms.findOneAndUpdate(
       {
-        _id: roomData._id
+        _id: roomData._id,
       },
       {
         $set: {
-          activeGame: newGameId
-        }
-      }
+          activeGame: newGameId,
+        },
+      },
     );
     ctx.body = {
-      id: newGameId
+      id: newGameId,
     };
   } else {
     ctx.body = {
       code: 501,
-      error: "人数不足"
+      error: '人数不足',
     };
   }
 });
 
 // 加入房间
-router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
+router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
   const { _id, userInfo } = ctx.state.user;
   let roomData = ctx.state.room;
   if (roomData) {
@@ -82,26 +82,25 @@ router.post("/:id", sessionUser, getRoom, async (ctx, next) => {
     if (flag) {
       roomData.userList.push({
         id: _id,
-        userInfo
+        userInfo,
       });
       await Rooms.updateOne(
         {
-          _id: roomData._id
+          _id: roomData._id,
         },
-        roomData
+        roomData,
       );
     }
     ctx.body = null;
   } else {
     ctx.body = {
-      code: 500
+      code: 500,
     };
   }
 });
 
-
 // 退出房间
-router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
+router.post('/:id/quit', sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
   let roomData = ctx.state.room;
 
@@ -112,22 +111,22 @@ router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
       roomData.userList.splice(userIndex, 1);
       await Rooms.updateOne(
         {
-          _id: roomData._id
+          _id: roomData._id,
         },
-        roomData
+        roomData,
       );
     }
     ctx.body = null;
   } else {
     ctx.body = {
       code: 500,
-      error: "请求失败"
+      error: '请求失败',
     };
   }
 });
 
 // 调整玩家顺序
-router.post("/:id/edituserlist/:index", sessionUser, getRoom, async ctx => {
+router.post('/:id/edituserlist/:index', sessionUser, getRoom, async ctx => {
   const { index } = ctx.params;
   const { _id } = ctx.state.user;
   let roomData = ctx.state.room;
@@ -141,56 +140,63 @@ router.post("/:id/edituserlist/:index", sessionUser, getRoom, async ctx => {
       roomData.userList = [userList[0], ...editUser, ...userList.slice(1)];
       await Rooms.updateOne(
         {
-          _id: roomData._id
+          _id: roomData._id,
         },
-        roomData
+        roomData,
       );
       ctx.body = null;
     } else {
       ctx.body = {
         code: 502,
-        error: "请求失败"
+        error: '请求失败',
       };
     }
   } else {
     ctx.body = {
       code: 500,
-      error: "请求失败"
+      error: '请求失败',
     };
   }
 });
 
 // 小程序 - 获取房间数据
-router.get("/wx/:id", sessionUser, getRoom, async (ctx, next) => {
+router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
   let roomData = ctx.state.room;
-  let { userList, activeGame, over } = roomData;
-  userList = await updateAndHandleUserList(userList);
   if (roomData) {
-    const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
-    const ownRoom = roomOwnerID == _id;
-    const roomIndex = userList
-      .map(user => user.id.toString())
-      .indexOf(_id.toString());
-    const inRoom = roomIndex >= 0;
-    const inGame = inRoom && roomIndex < 4;
-    ctx.body = {
-      userList: userList,
-      ownRoom,
-      activeGame,
-      inRoom,
-      inGame,
-      over
-    };
-    await Rooms.findOneAndUpdate(roomData, {
-      userList
-    });
+    const data = await getRoomData(_id, roomData);
+    ctx.body = data;
   } else {
     ctx.body = {
-      code: 500
+      code: 500,
     };
   }
 });
+
+async function getRoomData(userID, roomData) {
+  let { userList, activeGame, over } = roomData;
+  userList = await updateAndHandleUserList(userList);
+  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
+  const ownRoom = roomOwnerID == userID;
+  const roomIndex = userList
+    .map(user => user.id.toString())
+    .indexOf(userID.toString());
+  const inRoom = roomIndex >= 0;
+  const inGame = inRoom && roomIndex < 4;
+
+  await Rooms.findOneAndUpdate(roomData, {
+    userList,
+  });
+
+  return {
+    userList: userList,
+    ownRoom,
+    activeGame,
+    inRoom,
+    inGame,
+    over,
+  };
+}
 
 async function updateAndHandleUserList(list) {
   const userList = [];
@@ -207,45 +213,45 @@ async function updateAndHandleUserList(list) {
 }
 
 // 创建房间
-router.post("/", sessionUser, async (ctx, next) => {
+router.post('/', sessionUser, async (ctx, next) => {
   const { _id, userInfo } = ctx.state.user;
   let room = await Rooms.create({
     timeStamp: +new Date(),
     userList: [
       {
         id: _id,
-        userInfo
-      }
+        userInfo,
+      },
     ],
     mode: false,
-    gameHistory: []
+    gameHistory: [],
   });
 
   ctx.body = {
-    id: room._id
+    id: room._id,
   };
 });
 
 // 小程序 - 获取我在的房间列表
-router.get("/list/wx", sessionUser, async (ctx, next) => {
+router.get('/list/wx', sessionUser, async (ctx, next) => {
   const { user } = ctx.state;
   const { _id } = user;
   const roomList = await Rooms.find(
     {
       userList: { $elemMatch: { id: _id.toString() } },
-      over: { $ne: true }
+      over: { $ne: true },
     },
     {
       timeStamp: 1,
-      userList: 1
-    }
+      userList: 1,
+    },
   );
 
   ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
 });
 
 // 获取我在的房间列表 - 分页
-router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
+router.get('/v2/list/:pageNum', sessionUser, async (ctx, next) => {
   const { pageNum } = ctx.params;
   const Min = pageNum * 10;
   const Max = Min + 10;
@@ -255,26 +261,26 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
     {
       userList: { $elemMatch: { id: _id.toString() } },
       over: { $ne: true },
-      activeGame: { $exists: true, $ne: null }
+      activeGame: { $exists: true, $ne: null },
     },
     {
       timeStamp: 1,
       userList: 1,
-      activeGame: 1
-    }
+      activeGame: 1,
+    },
   ).sort({ timeStamp: -1 });
 
   const roomList = await Rooms.find(
     {
       userList: { $elemMatch: { id: _id.toString() } },
       over: { $ne: true },
-      activeGame: { $in: [undefined, null] }
+      activeGame: { $in: [undefined, null] },
     },
     {
       timeStamp: 1,
       userList: 1,
-      activeGame: 1
-    }
+      activeGame: 1,
+    },
   ).sort({ timeStamp: -1 });
 
   const resList = gamingRoomList.concat(roomList);
@@ -283,7 +289,7 @@ router.get("/v2/list/:pageNum", sessionUser, async (ctx, next) => {
 });
 
 // 获取正在进行的游戏、未开始的房间列表 - 分页
-router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
+router.get('/v3/list/:pageNum', sessionUser, async (ctx, next) => {
   const { pageNum } = ctx.params;
   const Min = pageNum * 10;
   const Max = Min + 10;
@@ -292,7 +298,7 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
   const userID = _id.toString();
   const gameList = await Games.find({
     userList: { $elemMatch: { id: userID } },
-    over: { $ne: true }
+    over: { $ne: true },
   })
     .sort({ timeStamp: -1 })
     .lean();
@@ -300,13 +306,13 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
   let roomList = await Rooms.find(
     {
       userList: { $elemMatch: { id: userID } },
-      over: { $ne: true }
+      over: { $ne: true },
     },
     {
       timeStamp: 1,
       userList: 1,
-      activeGame: 1
-    }
+      activeGame: 1,
+    },
   )
     .sort({ timeStamp: -1 })
     .lean();
@@ -337,5 +343,7 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
   });
   ctx.body = resList;
 });
+
+router.getRoomData = getRoomData;
 
 module.exports = router;
