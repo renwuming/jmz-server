@@ -51,7 +51,7 @@ const getGameData = async (userID, game) => {
   let teamIndex = Math.floor(index / 2);
   if (teamIndex < 0) teamIndex = 0; // 此时为旁观者模式
 
-  const { activeBattle, teams, over, battles, quickMode } = game;
+  const { activeBattle, teams, over, battles, quickMode, _id } = game;
   const battle = battles[activeBattle];
   const {
     desUsers,
@@ -161,6 +161,7 @@ const getGameData = async (userID, game) => {
   }
 
   const bodyData = {
+    id: _id,
     userIndex: index,
     userList: game.userList.map(user => ({ id: user.id, ...user.userInfo })),
     teamNames: getTeamNames(),

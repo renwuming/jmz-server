@@ -174,7 +174,7 @@ router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
 });
 
 async function getRoomData(userID, roomData) {
-  let { userList, activeGame, over } = roomData;
+  let { userList, activeGame, over, _id } = roomData;
   userList = await updateAndHandleUserList(userList);
   const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
   const ownRoom = roomOwnerID == userID;
@@ -189,6 +189,7 @@ async function getRoomData(userID, roomData) {
   });
 
   return {
+    id: _id,
     userList: userList,
     ownRoom,
     activeGame,
