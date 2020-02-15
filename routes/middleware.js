@@ -1,17 +1,23 @@
 const request = require('request-promise');
 const { validateUrl_wx } = require('./config');
+const getCache = require('./cache');
 
 const sessionUser = async function(ctx, next) {
   const ticket = ctx.request.header['x-ticket'];
   try {
-    const user = await request({
-      url: validateUrl_wx,
-      method: 'POST',
-      json: true,
-      body: {
-        ticket,
-      },
-    });
+    const cache = getCache();
+    let user = cache.get(ticket);
+    if (!user) {
+      user = await request({
+        url: validateUrl_wx,
+        method: 'POST',
+        json: true,
+        body: {
+          ticket,
+        },
+      });
+      cache.set(ticket, user);
+    }
     ctx.state.user = user;
     await next();
   } catch (error) {
