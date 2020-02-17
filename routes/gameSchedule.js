@@ -12,9 +12,9 @@ schedule.scheduleJob("*/1 * * * * *", function() {
   // 定时检查倒计时game的状态
   countdownQuickGames();
   // 定时检查room的game是否over
-  checkRoomIsOver();
+  // checkRoomIsOver();
   // 定时为在线匹配分组完成的玩家，启动游戏
-  handleMatchGroup();
+  // handleMatchGroup();
 });
 
 async function countdownQuickGames() {

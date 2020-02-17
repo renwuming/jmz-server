@@ -318,6 +318,9 @@ router.get('/v3/list/:pageNum', sessionUser, async (ctx, next) => {
     .sort({ timeStamp: -1 })
     .lean();
 
+  // 处理房间的游戏over状态
+  roomList = await checkRoomIsOver(roomList);
+
   // 筛掉已经在游戏中的房间
   const gameIdList = gameList.map(e => e._id.toString());
   roomList = roomList.filter(item => {
@@ -344,6 +347,42 @@ router.get('/v3/list/:pageNum', sessionUser, async (ctx, next) => {
   });
   ctx.body = resList;
 });
+
+async function checkRoomIsOver(roomList) {
+  const resList = [];
+  roomList.forEach(async room => {
+    const { activeGame, _id } = room;
+    const game = await Games.findOne({
+      _id: activeGame,
+    });
+    if (!game) {
+      await Rooms.findOneAndUpdate(
+        {
+          _id,
+        },
+        {
+          activeGame: null,
+          over: false,
+        },
+      );
+      resList.push(room);
+      return;
+    } else if (game.over) {
+      await Rooms.findOneAndUpdate(
+        {
+          _id,
+        },
+        {
+          over: true,
+        },
+      );
+      return;
+    }
+    resList.push(room);
+  });
+
+  return resList;
+}
 
 router.getRoomData = getRoomData;
 
