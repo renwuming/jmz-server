@@ -1,20 +1,26 @@
-const schedule = require("node-schedule");
-const Games = require("../models/game");
-const Rooms = require("../models/room");
-const gameRouter = require("./game");
-const matchRouter = require("./onlineMatch");
-const getCache = require("./cache");
+const schedule = require('node-schedule');
+const Games = require('../models/game');
+const Rooms = require('../models/room');
+const gameRouter = require('./game');
+const matchRouter = require('./onlineMatch');
+const getCache = require('./cache');
 
 // 匹配成功一段时间后，开始游戏
 const MATCH_WAIT_TIME = 6 * 1000;
 
-schedule.scheduleJob("*/1 * * * * *", function() {
+// 房间、游戏的过期时间为7天
+const DEADLINE = 7 * 24 * 3600 * 1000;
+
+schedule.scheduleJob('*/1 * * * * *', function() {
   // 定时检查倒计时game的状态
   countdownQuickGames();
-  // 定时检查room的game是否over
-  // checkRoomIsOver();
   // 定时为在线匹配分组完成的玩家，启动游戏
   // handleMatchGroup();
+});
+
+schedule.scheduleJob('* * */1 * * *', function() {
+  // 清理太久远的房间和游戏
+  cleanOldRoomAndGame();
 });
 
 async function countdownQuickGames() {
@@ -22,9 +28,9 @@ async function countdownQuickGames() {
     {
       quickMode: true,
       over: { $ne: true },
-      lock: { $ne: true }
+      lock: { $ne: true },
     },
-    { lastStage: 1, activeBattle: 1, battles: 1, timeStamp: 1 }
+    { lastStage: 1, activeBattle: 1, battles: 1, timeStamp: 1 },
   );
   quickGames.forEach(game => handleQuickGame(game));
 }
@@ -36,7 +42,7 @@ async function handleQuickGame(game) {
     lastStage = {
       timeStamp: game.timeStamp,
       stage: 0,
-      first: true // 第一个阶段
+      first: true, // 第一个阶段
     };
   }
   const { timeStamp, stage } = lastStage;
@@ -48,11 +54,11 @@ async function handleQuickGame(game) {
     lastStage.first = false;
     await Games.findOneAndUpdate(
       {
-        _id
+        _id,
       },
       {
-        lastStage
-      }
+        lastStage,
+      },
     );
     return;
   }
@@ -66,7 +72,7 @@ async function handleQuickGame(game) {
     if (stage === 0) {
       currentBattle.questions.forEach((list, index) => {
         if (gameRouter.judgeEmpty(list)) {
-          currentBattle.questions[index] = ["【超时】", "【超时】", "【超时】"];
+          currentBattle.questions[index] = ['【超时】', '【超时】', '【超时】'];
           currentBattle.jiemiAnswers[index] = [4, 4, 4];
           currentBattle.lanjieAnswers[index] = [4, 4, 4];
         }
@@ -89,79 +95,54 @@ async function handleQuickGame(game) {
     // 先为此game上锁
     await Games.findOneAndUpdate(
       {
-        _id
+        _id,
       },
       {
-        lock: true
-      }
+        lock: true,
+      },
     );
     await gameRouter.updateGameAfterSubmit(activeBattle, currentBattle, game);
     // 更新lastStage
     const newGame = await Games.findOne(
       {
-        _id
+        _id,
       },
-      { activeBattle: 1, battles: 1 }
+      { activeBattle: 1, battles: 1 },
     );
     lastStage.timeStamp = now;
     lastStage.stage = gameRouter.handleStageByGame(newGame);
     lastStage.first = false;
     await Games.findOneAndUpdate(
       {
-        _id
+        _id,
       },
       {
         lastStage,
         // 全部更新完毕后，解锁
-        lock: false
-      }
+        lock: false,
+      },
     );
   }
 }
 
-async function checkRoomIsOver() {
-  const roomList = await Rooms.find(
-    {
-      over: { $ne: true },
-      activeGame: { $exists: true }
-    },
-    {
-      activeGame: 1
-    }
-  );
-  roomList.forEach(async room => {
-    const { activeGame, _id } = room;
-    const game = await Games.findOne({
-      _id: activeGame
-    });
-    if (!game) {
-      await Rooms.findOneAndUpdate(
-        {
-          _id
-        },
-        {
-          activeGame: null,
-          over: false
-        }
-      );
-    } else if (game.over) {
-      await Rooms.findOneAndUpdate(
-        {
-          _id
-        },
-        {
-          over: true
-        }
-      );
-    }
+async function cleanOldRoomAndGame() {
+  const deadLine = new Date().getTime() - DEADLINE;
+
+  await Rooms.remove({
+    activeGame: { $in: [undefined, null] },
+    timeStamp: { $lt: deadLine },
+  });
+  await Games.remove({
+    over: { $ne: true },
+    timeStamp: { $lt: deadLine },
   });
 }
 
 async function handleMatchGroup() {
   const cache = getCache();
-  const GroupPool = cache.get("groupPool") || [];
+  const GroupPool = cache.get('groupPool') || [];
   const FullList = GroupPool.filter(
-    item => item.list && item.list.length >= matchRouter.SuccessLength
+    item => item.list && item.list.length >= matchRouter.SuccessLength,
   );
   FullList.forEach(async group => {
     const now = new Date().getTime();
@@ -182,7 +163,7 @@ async function handleMatchGroup() {
           ...matchData,
           activeGame,
           timeStamp: 0,
-          groupIndex: null
+          groupIndex: null,
         });
       });
       // 并解散该group
@@ -191,7 +172,7 @@ async function handleMatchGroup() {
       group.startTime = null;
     }
     GroupPool[groupIndex] = group;
-    cache.set("groupPool", GroupPool);
+    cache.set('groupPool', GroupPool);
   });
 }
 
