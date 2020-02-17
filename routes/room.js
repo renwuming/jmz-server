@@ -175,6 +175,9 @@ router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
 
 async function getRoomData(userID, roomData) {
   let { userList, activeGame, over, _id } = roomData;
+  // 检查room的游戏是否结束
+  await checkRoomIsOver([roomData]);
+
   userList = await updateAndHandleUserList(userList);
   const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
   const ownRoom = roomOwnerID == userID;
@@ -350,7 +353,8 @@ router.get('/v3/list/:pageNum', sessionUser, async (ctx, next) => {
 
 async function checkRoomIsOver(roomList) {
   const resList = [];
-  roomList.forEach(async room => {
+  for (let i = 0, L = roomList.length; i < L; i++) {
+    const room = roomList[i];
     const { activeGame, _id } = room;
     const game = await Games.findOne({
       _id: activeGame,
@@ -366,7 +370,6 @@ async function checkRoomIsOver(roomList) {
         },
       );
       resList.push(room);
-      return;
     } else if (game.over) {
       await Rooms.findOneAndUpdate(
         {
@@ -376,10 +379,10 @@ async function checkRoomIsOver(roomList) {
           over: true,
         },
       );
-      return;
+    } else {
+      resList.push(room);
     }
-    resList.push(room);
-  });
+  }
 
   return resList;
 }
