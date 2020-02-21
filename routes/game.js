@@ -370,15 +370,28 @@ router.post('/wx/:id/submit', sessionUser, getGame, async (ctx, next) => {
   const keyErrorList = [];
   let keyError;
   qList.forEach((q, index) => {
-    const flag = [].some.call(q, word => keywordsList.includes(word));
+    let flag = false;
+    const includesWords = [];
+    [].forEach.call(q, word => {
+      if (keywordsList.includes(word)) {
+        flag = true;
+        includesWords.push(word);
+      }
+    });
     if (flag) {
-      keyErrorList.push(index);
+      keyErrorList.push({
+        index,
+        includesWords,
+      });
       keyError = true;
     }
   });
   if (keyError) {
     const errorList = keyErrorList
-      .map(index => `第${index + 1}个内容【${qList[index]}】`)
+      .map(
+        item =>
+          `第${item.index + 1}个内容中，包含：${item.includesWords.join('/')}`,
+      )
       .join('，');
     ctx.body = {
       code: 501,
