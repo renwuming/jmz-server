@@ -318,7 +318,15 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
   )
     .skip(Start)
     .limit(10)
-    .sort({ timeStamp: -1 });
+    .sort({ timeStamp: -1 })
+    .lean();
+
+  roomList.forEach(room => {
+    const { userList } = room;
+    if (userList.map(user => user.id).includes(_id.toString())) {
+      room.inRoom = true;
+    }
+  });
 
   ctx.body = roomList;
 });
