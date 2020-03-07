@@ -129,7 +129,7 @@ async function cleanOldRoomAndGame() {
   const deadLine = new Date().getTime() - DEADLINE;
 
   await Rooms.remove({
-    activeGame: { $in: [undefined, null] },
+    over: { $ne: true },
     timeStamp: { $lt: deadLine },
   });
   await Games.remove({

@@ -292,6 +292,27 @@ router.get('/v2/list/:pageNum', sessionUser, async (ctx, next) => {
   ctx.body = resList.slice(Min, Max);
 });
 
+// 获取大厅房间列表 - 分页
+router.get('/hall/list/:pageNum', sessionUser, async ctx => {
+  const { pageNum } = ctx.params;
+  const Min = pageNum * 10;
+  const Max = Min + 10;
+  const { user } = ctx.state;
+  const { _id } = user;
+  const roomList = await Rooms.find(
+    {
+      over: { $ne: true },
+    },
+    {
+      timeStamp: 1,
+      userList: 1,
+      activeGame: 1,
+    },
+  ).sort({ timeStamp: -1 });
+
+  ctx.body = roomList.slice(Min, Max);
+});
+
 // 获取正在进行的游戏、未开始的房间列表 - 分页
 router.get('/v3/list/:pageNum', sessionUser, async (ctx, next) => {
   const { pageNum } = ctx.params;
