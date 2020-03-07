@@ -140,6 +140,7 @@ const getGameData = async (userID, game) => {
   if (over) gameOver = true; // 非正常情况，游戏被房主终止
 
   // 倒计时逻辑
+  const now = new Date().getTime();
   let countdownData = null;
   if (!gameOver && quickMode) {
     let { lastStage } = game;
@@ -151,7 +152,6 @@ const getGameData = async (userID, game) => {
       };
     }
     const { timeStamp, stage } = lastStage;
-    const now = new Date().getTime();
     let remainingTime =
       stageMap[stage].time - Math.floor((now - timeStamp) / 1000);
     countdownData = {
@@ -159,6 +159,24 @@ const getGameData = async (userID, game) => {
       name: stageMap[stage].name,
     };
   }
+
+  // 更新用户的在线/离线状态
+  let { userStatus } = game;
+  if (!userStatus) userStatus = {};
+  userStatus[userID] = now;
+  await Games.findOneAndUpdate(
+    {
+      _id: game._id,
+    },
+    {
+      userStatus,
+    },
+  );
+  const userOnlineStatus = userList.map(id => {
+    // 在线的标准为，5s内更新过timeStamp
+    const timeStamp = userStatus[id];
+    return timeStamp > now - 5000;
+  });
 
   const bodyData = {
     id: _id,
@@ -185,6 +203,7 @@ const getGameData = async (userID, game) => {
     quickMode,
     countdownData,
     stageName: stageMap[handleStageByGame(game)].name,
+    userOnlineStatus,
   };
 
   if (gameOver) {

@@ -175,7 +175,7 @@ router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
 });
 
 async function getRoomData(userID, roomData) {
-  let { userList, activeGame, over, _id } = roomData;
+  let { userList, activeGame, over, _id, userStatus } = roomData;
   // 检查room的游戏是否结束
   await checkRoomIsOver([roomData]);
 
@@ -188,10 +188,22 @@ async function getRoomData(userID, roomData) {
   const inRoom = roomIndex >= 0;
   const inGame = inRoom && roomIndex < 4;
 
+  // 更新用户的在线/离线状态
+  const current = new Date().getTime();
+  if (!userStatus) userStatus = {};
+  userStatus[userID] = current;
+  const userOnlineStatus = userList
+    .map(item => item.id)
+    .map(id => {
+      // 在线的标准为，5s内更新过timeStamp
+      const timeStamp = userStatus[id];
+      return timeStamp > current - 5000;
+    });
+
   await Rooms.findOneAndUpdate(roomData, {
     userList,
+    userStatus,
   });
-
   return {
     id: _id,
     userList: userList,
@@ -200,6 +212,7 @@ async function getRoomData(userID, roomData) {
     inRoom,
     inGame,
     over,
+    userOnlineStatus,
   };
 }
 

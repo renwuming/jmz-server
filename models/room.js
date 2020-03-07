@@ -7,6 +7,7 @@ var productionSchema = new Schema({
   userList: Array,
   timeStamp: Number,
   over: Boolean,
+  userStatus: Object, // 玩家的离线/在线状态
 })
 
 module.exports = mongoose.model('room', productionSchema)
