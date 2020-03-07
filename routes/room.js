@@ -200,10 +200,15 @@ async function getRoomData(userID, roomData) {
       return timeStamp > current - 5000;
     });
 
-  await Rooms.findOneAndUpdate(roomData, {
-    userList,
-    userStatus,
-  });
+  await Rooms.findOneAndUpdate(
+    {
+      _id: roomData._id,
+    },
+    {
+      userList,
+      userStatus,
+    },
+  );
   return {
     id: _id,
     userList: userList,
