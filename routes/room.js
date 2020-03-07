@@ -299,10 +299,9 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
   const Start = pageNum * 10;
   const { user } = ctx.state;
   const { _id } = user;
-  // 最早时间为昨天的零点
+  // 4小时以内的房间
   const DEADLINE = Dayjs()
-    .subtract(1, 'day')
-    .startOf('day')
+    .subtract(4, 'hour')
     .valueOf();
 
   const roomList = await Rooms.find(
