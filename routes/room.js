@@ -1,3 +1,4 @@
+const Dayjs = require('dayjs');
 const router = require('koa-router')();
 const Games = require('../models/game');
 const Rooms = require('../models/room');
@@ -295,22 +296,32 @@ router.get('/v2/list/:pageNum', sessionUser, async (ctx, next) => {
 // 获取大厅房间列表 - 分页
 router.get('/hall/list/:pageNum', sessionUser, async ctx => {
   const { pageNum } = ctx.params;
-  const Min = pageNum * 10;
-  const Max = Min + 10;
+  const Start = pageNum * 10;
   const { user } = ctx.state;
   const { _id } = user;
+  // 最早时间为昨天的零点
+  const DEADLINE = Dayjs()
+    .subtract(1, 'day')
+    .startOf('day')
+    .valueOf();
+
   const roomList = await Rooms.find(
     {
       over: { $ne: true },
+      timeStamp: { $gt: DEADLINE },
+      $where: 'this.userList.length > 0',
     },
     {
       timeStamp: 1,
       userList: 1,
       activeGame: 1,
     },
-  ).sort({ timeStamp: -1 });
+  )
+    .skip(Start)
+    .limit(10)
+    .sort({ timeStamp: -1 });
 
-  ctx.body = roomList.slice(Min, Max);
+  ctx.body = roomList;
 });
 
 // 获取正在进行的游戏、未开始的房间列表 - 分页
