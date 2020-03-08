@@ -16,22 +16,30 @@ app.ws.use(
       const userID = ctx.state.user._id.toString();
       ctx.websocket.on('message', async msg => {
         const [path, id] = msg.split('-');
-        if (path === 'game') {
-          let game =
-            (await Games.findOne({
-              _id: id,
-            })) || {};
-          game = game.toObject();
-          const data = await getGameData(userID, game);
-          ctx.websocket.send(JSON.stringify(data));
-        } else if (path === 'room') {
-          let room =
-            (await Rooms.findOne({
-              _id: id,
-            })) || {};
-          room = room.toObject();
-          const data = await getRoomData(userID, room);
-          ctx.websocket.send(JSON.stringify(data));
+        try {
+          if (path === 'game') {
+            let game =
+              (await Games.findOne({
+                _id: id,
+              })) || {};
+            game = game.toObject();
+            const data = await getGameData(userID, game);
+            ctx.websocket.send(JSON.stringify(data));
+          } else if (path === 'room') {
+            let room =
+              (await Rooms.findOne({
+                _id: id,
+              })) || {};
+            room = room.toObject();
+            const data = await getRoomData(userID, room);
+            ctx.websocket.send(JSON.stringify(data));
+          }
+        } catch(err) {
+          console.error(err)
+          ctx.websocket.send(JSON.stringify({
+            code: 500,
+            message: '房间不存在'
+          }))
         }
       });
     })

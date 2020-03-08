@@ -113,17 +113,6 @@ router.getWxUser = async id => {
   return null;
 };
 
-router.get('/history/games', sessionUser, async function(ctx, next) {
-  let { _id } = ctx.state.user;
-  _id = _id.toString();
-
-  const list = await gameHistoryData(_id);
-  ctx.body = list.map(item => {
-    const { _id, userList, status } = item;
-    return { _id, userList, status };
-  });
-});
-
 router.get('/v2/history/games/:pageNum', sessionUser, async function(ctx) {
   const { pageNum } = ctx.params;
   const Min = pageNum * 10;

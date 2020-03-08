@@ -30,7 +30,14 @@ router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
   const { randomMode, quickMode } = ctx.request.body;
   const roomData = ctx.state.room;
-  let { userList } = roomData;
+  let { userList, activeGame } = roomData;
+  // 已有游戏，则直接返回
+  if (activeGame) {
+    ctx.body = {
+      id: activeGame,
+    };
+    return;
+  }
   userList = userList.filter(user => user.userInfo);
   const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
   const ownRoom = roomOwnerID == _id;
@@ -108,7 +115,12 @@ router.post('/:id/quit', sessionUser, getRoom, async (ctx, next) => {
   if (roomData) {
     const userList = roomData.userList.map(user => user.id.toString());
     const userIndex = userList.indexOf(_id.toString());
-    if (userIndex >= 0) {
+    // 若为房主，则解散房间
+    if (userIndex === 0) {
+      await Rooms.remove({
+        _id: roomData._id,
+      });
+    } else if (userIndex > 0) {
       roomData.userList.splice(userIndex, 1);
       await Rooms.updateOne(
         {
@@ -175,7 +187,7 @@ router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
 });
 
 async function getRoomData(userID, roomData) {
-  let { userList, activeGame, over, _id, userStatus } = roomData;
+  let { userList, activeGame, over, _id, userStatus, timeStamp } = roomData;
   // 检查room的游戏是否结束
   await checkRoomIsOver([roomData]);
 
@@ -190,15 +202,14 @@ async function getRoomData(userID, roomData) {
 
   // 更新用户的在线/离线状态
   const current = new Date().getTime();
+  if (ownRoom) {
+    // 房主会更新房间的活跃时间
+    timeStamp = current;
+  }
   if (!userStatus) userStatus = {};
   userStatus[userID] = current;
-  const userOnlineStatus = userList
-    .map(item => item.id)
-    .map(id => {
-      // 在线的标准为，5s内更新过timeStamp
-      const timeStamp = userStatus[id];
-      return timeStamp > current - 5000;
-    });
+  roomData.userStatus = userStatus;
+  const userOnlineStatus = handleOnlineStatus(roomData);
 
   await Rooms.findOneAndUpdate(
     {
@@ -207,6 +218,7 @@ async function getRoomData(userID, roomData) {
     {
       userList,
       userStatus,
+      timeStamp,
     },
   );
   return {
@@ -219,6 +231,20 @@ async function getRoomData(userID, roomData) {
     over,
     userOnlineStatus,
   };
+}
+
+function handleOnlineStatus(roomData) {
+  const current = new Date().getTime();
+  let { userList, userStatus } = roomData;
+  userStatus = userStatus || {};
+  return userList
+    .map(item => item.id)
+    .map(id => {
+      // 在线的标准为，3s内更新过timeStamp
+      const timeStamp = userStatus[id];
+      console.log(timeStamp, current - 3000);
+      return timeStamp > current - 3000;
+    });
 }
 
 async function updateAndHandleUserList(list) {
@@ -238,11 +264,25 @@ async function updateAndHandleUserList(list) {
 // 创建房间
 router.post('/', sessionUser, async (ctx, next) => {
   const { _id, userInfo } = ctx.state.user;
+  const userID = _id.toString();
+  const ownRoom = await Rooms.findOne({
+    'userList.0.id': userID,
+    over: { $ne: true },
+  });
+
+  // 如果已经拥有未结束的房间，则返回
+  if (ownRoom) {
+    ctx.body = {
+      id: ownRoom._id,
+    };
+    return;
+  }
+
   let room = await Rooms.create({
     timeStamp: +new Date(),
     userList: [
       {
-        id: _id,
+        id: userID,
         userInfo,
       },
     ],
@@ -253,62 +293,6 @@ router.post('/', sessionUser, async (ctx, next) => {
   ctx.body = {
     id: room._id,
   };
-});
-
-// 小程序 - 获取我在的房间列表
-router.get('/list/wx', sessionUser, async (ctx, next) => {
-  const { user } = ctx.state;
-  const { _id } = user;
-  const roomList = await Rooms.find(
-    {
-      userList: { $elemMatch: { id: _id.toString() } },
-      over: { $ne: true },
-    },
-    {
-      timeStamp: 1,
-      userList: 1,
-    },
-  );
-
-  ctx.body = roomList.sort((a, b) => b.timeStamp - a.timeStamp);
-});
-
-// 获取我在的房间列表 - 分页
-router.get('/v2/list/:pageNum', sessionUser, async (ctx, next) => {
-  const { pageNum } = ctx.params;
-  const Min = pageNum * 10;
-  const Max = Min + 10;
-  const { user } = ctx.state;
-  const { _id } = user;
-  const gamingRoomList = await Rooms.find(
-    {
-      userList: { $elemMatch: { id: _id.toString() } },
-      over: { $ne: true },
-      activeGame: { $exists: true, $ne: null },
-    },
-    {
-      timeStamp: 1,
-      userList: 1,
-      activeGame: 1,
-    },
-  ).sort({ timeStamp: -1 });
-
-  const roomList = await Rooms.find(
-    {
-      userList: { $elemMatch: { id: _id.toString() } },
-      over: { $ne: true },
-      activeGame: { $in: [undefined, null] },
-    },
-    {
-      timeStamp: 1,
-      userList: 1,
-      activeGame: 1,
-    },
-  ).sort({ timeStamp: -1 });
-
-  const resList = gamingRoomList.concat(roomList);
-
-  ctx.body = resList.slice(Min, Max);
 });
 
 // 获取大厅房间列表 - 分页
@@ -332,6 +316,7 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
       timeStamp: 1,
       userList: 1,
       activeGame: 1,
+      userStatus: 1,
     },
   )
     .skip(Start)
@@ -344,6 +329,7 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
     if (userList.map(user => user.id).includes(_id.toString())) {
       room.inRoom = true;
     }
+    room.userOnlineStatus = handleOnlineStatus(room);
   });
 
   ctx.body = {
@@ -376,6 +362,7 @@ router.get('/v3/list/:pageNum', sessionUser, async (ctx, next) => {
       timeStamp: 1,
       userList: 1,
       activeGame: 1,
+      userStatus: 1,
     },
   )
     .sort({ timeStamp: -1 })
@@ -383,6 +370,9 @@ router.get('/v3/list/:pageNum', sessionUser, async (ctx, next) => {
 
   // 处理房间的游戏over状态
   roomList = await checkRoomIsOver(roomList);
+  roomList.forEach(room => {
+    room.userOnlineStatus = handleOnlineStatus(room);
+  });
 
   // 筛掉已经在游戏中的房间
   const gameIdList = gameList.map(e => e._id.toString());

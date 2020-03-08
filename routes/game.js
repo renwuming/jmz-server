@@ -173,9 +173,9 @@ const getGameData = async (userID, game) => {
     },
   );
   const userOnlineStatus = userList.map(id => {
-    // 在线的标准为，5s内更新过timeStamp
+    // 在线的标准为，3s内更新过timeStamp
     const timeStamp = userStatus[id];
-    return timeStamp > now - 5000;
+    return timeStamp > now - 3000;
   });
 
   const bodyData = {
