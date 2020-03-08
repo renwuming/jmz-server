@@ -317,9 +317,9 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
   const Start = pageNum * 10;
   const { user } = ctx.state;
   const { _id } = user;
-  // 4小时以内的房间
+  // 2小时以内的房间
   const DEADLINE = Dayjs()
-    .subtract(4, 'hour')
+    .subtract(2, 'hour')
     .valueOf();
 
   const roomList = await Rooms.find(
@@ -346,7 +346,10 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
     }
   });
 
-  ctx.body = roomList;
+  ctx.body = {
+    list: roomList,
+    hallTimeRange: '2小时',
+  };
 });
 
 // 获取正在进行的游戏、未开始的房间列表 - 分页

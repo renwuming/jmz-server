@@ -3,7 +3,7 @@ const Users = require('../models/user');
 const Games = require('../models/game');
 const gameRouter = require('./game');
 const { sessionUser } = require('./middleware');
-const { mode } = require('./config');
+const { mode, strongTip } = require('./config');
 const getCache = require('./cache');
 
 router.prefix('/users');
@@ -43,7 +43,7 @@ router.post('/validate', sessionUser, async function(ctx, next) {
   const userID = _id.toString();
   const matchData = cache.get(userID) || {};
   const { activeGame } = matchData;
-  const historyList = await gameHistoryData(userID);
+  const historyList = strongTip ? 0 : await gameHistoryData(userID);
 
   // 判断game是否已结束
   if (activeGame) {
