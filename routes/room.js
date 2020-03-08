@@ -326,8 +326,12 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
 
   roomList.forEach(room => {
     const { userList } = room;
-    if (userList.map(user => user.id).includes(_id.toString())) {
+    const index = userList.map(user => user.id).indexOf(_id.toString());
+    if (index >= 0) {
       room.inRoom = true;
+      if (index === 0) {
+        room.ownRoom = true;
+      }
     }
     room.userOnlineStatus = handleOnlineStatus(room);
   });
@@ -371,6 +375,11 @@ router.get('/v3/list/:pageNum', sessionUser, async (ctx, next) => {
   // 处理房间的游戏over状态
   roomList = await checkRoomIsOver(roomList);
   roomList.forEach(room => {
+    const { userList } = room;
+    const index = userList.map(user => user.id).indexOf(_id.toString());
+    if (index === 0) {
+      room.ownRoom = true;
+    }
     room.userOnlineStatus = handleOnlineStatus(room);
   });
 
