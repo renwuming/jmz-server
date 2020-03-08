@@ -76,6 +76,57 @@ router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
   }
 });
 
+// 小程序 - 开始某房间的游戏v2
+router.post('/v2/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
+  const { _id } = ctx.state.user;
+  const roomData = ctx.state.room;
+  let { userList, activeGame, random, timer } = roomData;
+  console.log(random, timer)
+  // 已有游戏，则直接返回
+  if (activeGame) {
+    ctx.body = {
+      id: activeGame,
+    };
+    return;
+  }
+  userList = userList.filter(user => user.userInfo);
+  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
+  const ownRoom = roomOwnerID == _id;
+
+  const playerFlag =
+    MODE === 'game'
+      ? userList.length >= 4
+      : userList.length === 1 || userList.length >= 4;
+
+  if (ownRoom && playerFlag) {
+    const gameData = await GameRouter.gameInit(
+      userList.slice(0, 4),
+      random,
+      timer,
+    );
+    const game = await Games.create(gameData);
+    const newGameId = game._id;
+    await Rooms.findOneAndUpdate(
+      {
+        _id: roomData._id,
+      },
+      {
+        $set: {
+          activeGame: newGameId,
+        },
+      },
+    );
+    ctx.body = {
+      id: newGameId,
+    };
+  } else {
+    ctx.body = {
+      code: 501,
+      error: '人数不足',
+    };
+  }
+});
+
 // 加入房间
 router.post('/:id', sessionUser, getRoom, async (ctx, next) => {
   const { _id, userInfo } = ctx.state.user;
@@ -172,6 +223,27 @@ router.post('/:id/edituserlist/:index', sessionUser, getRoom, async ctx => {
   }
 });
 
+// 调整room设置
+router.post('/:id/status', sessionUser, getRoom, async ctx => {
+  const status = ctx.request.body;
+  const roomData = ctx.state.room;
+
+  if (roomData) {
+    await Rooms.updateOne(
+      {
+        _id: roomData._id,
+      },
+      status,
+    );
+    ctx.body = null;
+  } else {
+    ctx.body = {
+      code: 500,
+      error: '请求失败',
+    };
+  }
+});
+
 // 小程序 - 获取房间数据
 router.get('/wx/:id', sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
@@ -222,6 +294,7 @@ async function getRoomData(userID, roomData) {
     },
   );
   return {
+    ...roomData,
     id: _id,
     userList: userList,
     ownRoom,
@@ -242,7 +315,6 @@ function handleOnlineStatus(roomData) {
     .map(id => {
       // 在线的标准为，3s内更新过timeStamp
       const timeStamp = userStatus[id];
-      console.log(timeStamp, current - 3000);
       return timeStamp > current - 3000;
     });
 }
@@ -286,7 +358,9 @@ router.post('/', sessionUser, async (ctx, next) => {
         userInfo,
       },
     ],
-    mode: false,
+    random: true,
+    timer: true,
+    publicStatus: true,
     gameHistory: [],
   });
 
@@ -308,6 +382,7 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
 
   const roomList = await Rooms.find(
     {
+      publicStatus: true,
       over: { $ne: true },
       timeStamp: { $gt: DEADLINE },
       $where: 'this.userList.length > 0',
