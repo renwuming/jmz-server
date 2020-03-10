@@ -380,7 +380,7 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
     .subtract(2, 'hour')
     .valueOf();
 
-  const roomList = await Rooms.find(
+  let roomList = await Rooms.find(
     {
       publicStatus: true,
       over: { $ne: true },
@@ -398,6 +398,9 @@ router.get('/hall/list/:pageNum', sessionUser, async ctx => {
     .limit(10)
     .sort({ timeStamp: -1 })
     .lean();
+
+  // 处理房间的游戏over状态
+  roomList = await checkRoomIsOver(roomList);
 
   roomList.forEach(room => {
     const { userList } = room;
