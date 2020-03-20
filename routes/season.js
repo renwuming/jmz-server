@@ -19,7 +19,10 @@ router.get('/newest/rank', async ctx => {
       .map(key => {
         const { userInfo, score } = userMap[key];
         return {
-          userInfo,
+          userInfo: {
+            ...userInfo,
+            id: key,
+          },
           score,
         };
       })
