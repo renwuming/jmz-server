@@ -1,18 +1,24 @@
-var mongoose = require("mongoose");
+var mongoose = require('mongoose');
 
 var Schema = mongoose.Schema;
 
-var productionSchema = new Schema({
-  userList: Array,
-  teams: Array,
-  battles: Array,
-  activeBattle: Number,
-  over: Boolean,
-  timeStamp: Number,
-  quickMode: Boolean,
-  lastStage: Object, // 上一个阶段 加密 or 解密拦截
-  lock: Boolean,
-  userStatus: Object, // 玩家的离线/在线状态
-});
+var productionSchema = new Schema(
+  {
+    userList: Array,
+    teams: Array,
+    battles: Array,
+    activeBattle: Number,
+    over: Boolean,
+    timeStamp: Number,
+    quickMode: Boolean,
+    lastStage: Object, // 上一个阶段 加密 or 解密拦截
+    lock: Boolean,
+    userStatus: Object, // 玩家的离线/在线状态
+    relaxMode: Boolean, // 是否是赛季模式，true 休闲模式，false 赛季模式
+  },
+  {
+    timestamps: true,
+  },
+);
 
-module.exports = mongoose.model("game", productionSchema);
+module.exports = mongoose.model('game', productionSchema);

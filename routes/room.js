@@ -80,8 +80,7 @@ router.post('/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
 router.post('/v2/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
   const { _id } = ctx.state.user;
   const roomData = ctx.state.room;
-  let { userList, activeGame, random, timer } = roomData;
-  console.log(random, timer)
+  let { userList, activeGame, random, timer, relaxMode } = roomData;
   // 已有游戏，则直接返回
   if (activeGame) {
     ctx.body = {
@@ -103,6 +102,7 @@ router.post('/v2/wx/:id/start', sessionUser, getRoom, async (ctx, next) => {
       userList.slice(0, 4),
       random,
       timer,
+      relaxMode,
     );
     const game = await Games.create(gameData);
     const newGameId = game._id;
@@ -283,6 +283,8 @@ async function getRoomData(userID, roomData) {
   roomData.userStatus = userStatus;
   const userOnlineStatus = handleOnlineStatus(roomData);
 
+  const roomStatus = handleRoomStatus(roomData);
+
   await Rooms.findOneAndUpdate(
     {
       _id: roomData._id,
@@ -303,6 +305,34 @@ async function getRoomData(userID, roomData) {
     inGame,
     over,
     userOnlineStatus,
+    ...roomStatus,
+  };
+}
+
+function handleRoomStatus(roomData) {
+  const { publicStatus, random, timer, relaxMode } = roomData;
+
+  const tags = [
+    {
+      text: publicStatus ? '公开房间' : '私密房间',
+      red: !publicStatus,
+    },
+    {
+      text: random ? '随机组队' : '固定组队',
+      red: random,
+    },
+    {
+      text: timer ? '限时' : '不限时',
+      red: timer,
+    },
+  ];
+
+  return {
+    roomMode: {
+      text: relaxMode ? '休闲模式' : '赛季排位',
+      red: !relaxMode,
+    },
+    tags,
   };
 }
 
@@ -333,15 +363,36 @@ async function updateAndHandleUserList(list) {
   return userList;
 }
 
-// 创建房间
-router.post('/', sessionUser, async (ctx, next) => {
-  const { _id, userInfo } = ctx.state.user;
+// 获取已有房间
+router.get('/ownroom', sessionUser, async ctx => {
+  const { _id } = ctx.state.user;
   const userID = _id.toString();
   const ownRoom = await Rooms.findOne({
     'userList.0.id': userID,
     over: { $ne: true },
   });
+  // 如果已经拥有未结束的房间，则返回
+  if (ownRoom) {
+    ctx.body = {
+      id: ownRoom._id,
+    };
+    return;
+  } else {
+    ctx.body = {
+      id: null,
+    };
+  }
+});
 
+// 创建房间
+router.post('/', sessionUser, async (ctx, next) => {
+  const { _id, userInfo } = ctx.state.user;
+  const { publicStatus, random, timer, relaxMode } = ctx.request.body;
+  const userID = _id.toString();
+  const ownRoom = await Rooms.findOne({
+    'userList.0.id': userID,
+    over: { $ne: true },
+  });
   // 如果已经拥有未结束的房间，则返回
   if (ownRoom) {
     ctx.body = {
@@ -358,9 +409,10 @@ router.post('/', sessionUser, async (ctx, next) => {
         userInfo,
       },
     ],
-    random: true,
-    timer: true,
-    publicStatus: true,
+    random,
+    timer,
+    publicStatus,
+    relaxMode,
     gameHistory: [],
   });
 

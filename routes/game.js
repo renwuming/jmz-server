@@ -1,7 +1,9 @@
 const router = require('koa-router')();
 const Games = require('../models/game');
+const Seasons = require('../models/seasons');
 const { sessionUser } = require('./middleware');
 const { msgListSecCheck } = require('./wxAuth');
+const { getNewestSeason } = require('./season');
 const dictionary = require('./code');
 let DEBUG_INDEX; // = 2; // todo
 
@@ -126,16 +128,21 @@ const getGameData = async (userID, game) => {
   const table2 = getHistoryTable(history2);
   const gameResult = handleSum(battles);
   let { sumList, gameOver, winner, resultMap } = gameResult;
-  if (gameOver && !over) {
-    // 若游戏已结束，更新数据库
-    await Games.findOneAndUpdate(
-      {
-        _id: game._id,
-      },
-      {
-        over: gameOver,
-      },
-    );
+  if (gameOver) {
+    if (!over) {
+      // 若游戏已结束，更新数据库
+      await Games.findOneAndUpdate(
+        {
+          _id: game._id,
+        },
+        {
+          over: gameOver,
+        },
+      );
+    }
+    if (!game.relaxMode) {
+      handleSeasonRank(game.userList);
+    }
   }
   if (over) gameOver = true; // 非正常情况，游戏被房主终止
 
@@ -587,21 +594,56 @@ Array.prototype.shuffle = function() {
   return this;
 };
 
-// 小程序 - 获取所有游戏数据
-router.get('/', async ctx => {
-  const list = await Games.find({ over: true }).lean();
-
-  ctx.body = list.map(item => {
-    const { _id, userList, activeBattle } = item;
-    return {
-      id: _id,
-      userList,
-      battleCount: activeBattle + 1,
+// 处理赛季逻辑
+async function handleSeasonRank(userList) {
+  const season = await getNewestSeason();
+  let { startAt, userMap, _id } = season;
+  if (!userMap) userMap = {};
+  for (let i = 0, L = userList.length; i < L; i++) {
+    const { id, userInfo } = userList[i];
+    let score = 0;
+    // 获取赛季内的游戏
+    const seasonGames = await Games.find({
+      userList: { $elemMatch: { id } },
+      over: true,
+      createdAt: { $gt: startAt },
+    }).lean();
+    seasonGames.forEach(game => {
+      const { userList, battles } = game;
+      const userIndex = userList.map(e => e.id).indexOf(id);
+      const teamIndex = userIndex >= 2 ? 1 : 0;
+      const gameResult = handleSum(battles);
+      const { winner } = gameResult;
+      if (winner < 0 || winner === undefined) {
+        return;
+      } else if (winner === teamIndex) {
+        score += 2;
+      } else {
+        score -= 1;
+      }
+    });
+    userMap[id] = {
+      userInfo,
+      score,
     };
-  });
-});
+  }
 
-router.gameInit = async function(userList, randomMode, quickMode) {
+  await Seasons.findOneAndUpdate(
+    {
+      _id,
+    },
+    {
+      userMap,
+    },
+  );
+}
+
+router.gameInit = async function(
+  userList,
+  randomMode,
+  quickMode,
+  relaxMode = false,
+) {
   // 在随机模式下，将玩家列表打乱顺序
   if (randomMode) {
     userList.shuffle();
@@ -626,6 +668,7 @@ router.gameInit = async function(userList, randomMode, quickMode) {
     activeBattle: 0,
     timeStamp: +new Date(),
     quickMode,
+    relaxMode,
   };
   return data;
 };

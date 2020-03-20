@@ -20,6 +20,7 @@ const wxAuth = require("./routes/wxAuth");
 const webWxLogin = require("./routes/webWxLogin");
 const mode = require("./routes/mode");
 const word = require("./routes/word");
+const season = require("./routes/season");
 const onlineMatch = require("./routes/onlineMatch");
 
 global.mongoose = mongoose.connect("mongodb://localhost:27017/jmz", {
@@ -80,6 +81,7 @@ app.use(wxAuth.routes(), wxAuth.allowedMethods());
 app.use(webWxLogin.routes(), webWxLogin.allowedMethods());
 app.use(mode.routes(), mode.allowedMethods());
 app.use(word.routes(), word.allowedMethods());
+app.use(season.routes(), season.allowedMethods());
 app.use(onlineMatch.routes(), onlineMatch.allowedMethods());
 
 // error-handling
