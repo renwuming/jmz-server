@@ -34,7 +34,7 @@ router.get('/newest/rank', async ctx => {
     rankList = rankList.concat(new Array(10 - L).fill(defaultRankUser));
   }
 
-  ctx.body = rankList;
+  ctx.body = rankList.slice(0, 50);
 });
 
 router.get('/newest', async ctx => {
