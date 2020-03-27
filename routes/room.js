@@ -370,6 +370,7 @@ router.get('/ownroom', sessionUser, async ctx => {
   const ownRoom = await Rooms.findOne({
     'userList.0.id': userID,
     over: { $ne: true },
+    activeGame: { $in: [undefined, null] },
   });
   // 如果已经拥有未结束的房间，则返回
   if (ownRoom) {
@@ -392,6 +393,7 @@ router.post('/', sessionUser, async (ctx, next) => {
   const ownRoom = await Rooms.findOne({
     'userList.0.id': userID,
     over: { $ne: true },
+    activeGame: { $in: [undefined, null] },
   });
   // 如果已经拥有未结束的房间，则返回
   if (ownRoom) {
