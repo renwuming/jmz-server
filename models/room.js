@@ -11,8 +11,10 @@ var productionSchema = new Schema(
     random: Boolean, // 是否随机组队
     timer: Boolean, // 是否限时
     publicStatus: Boolean, // 是否公开房间
-    relaxMode: Boolean, // 是否是赛季模式，true 休闲模式，false 赛季模式
+    relaxMode: Boolean, // 是否为赛季模式，true 休闲模式，false 赛季模式
+    teamMode: Boolean, // 是否为团队模式
     userStatus: Object, // 玩家的离线/在线状态
+    ownerQuitGame: Boolean, // 房主是否参与游戏
   },
   {
     timestamps: true,
