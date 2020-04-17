@@ -1,9 +1,9 @@
-const schedule = require('node-schedule');
-const Games = require('../models/game');
-const Rooms = require('../models/room');
-const gameRouter = require('./game');
-const matchRouter = require('./onlineMatch');
-const getCache = require('./cache');
+const schedule = require("node-schedule");
+const Games = require("../models/game");
+const Rooms = require("../models/room");
+const gameRouter = require("./game");
+const matchRouter = require("./onlineMatch");
+const getCache = require("./cache");
 
 // 匹配成功一段时间后，开始游戏
 const MATCH_WAIT_TIME = 6 * 1000;
@@ -11,28 +11,25 @@ const MATCH_WAIT_TIME = 6 * 1000;
 // 房间、游戏的过期时间为7天
 const DEADLINE = 7 * 24 * 3600 * 1000;
 
-schedule.scheduleJob('*/1 * * * * *', function() {
+schedule.scheduleJob("*/1 * * * * *", function () {
   // 定时检查倒计时game的状态
   countdownQuickGames();
   // 定时为在线匹配分组完成的玩家，启动游戏
   // handleMatchGroup();
 });
 
-schedule.scheduleJob('* * */1 * * *', function() {
+schedule.scheduleJob("* * */1 * * *", function () {
   // 清理太久远的房间和游戏
   cleanOldRoomAndGame();
 });
 
 async function countdownQuickGames() {
-  const quickGames = await Games.find(
-    {
-      quickMode: true,
-      over: { $ne: true },
-      lock: { $ne: true },
-    },
-    { lastStage: 1, activeBattle: 1, battles: 1, timeStamp: 1 },
-  );
-  quickGames.forEach(game => handleQuickGame(game));
+  const quickGames = await Games.find({
+    quickMode: true,
+    over: { $ne: true },
+    lock: { $ne: true },
+  });
+  quickGames.forEach((game) => handleQuickGame(game));
 }
 
 async function handleQuickGame(game) {
@@ -72,7 +69,7 @@ async function handleQuickGame(game) {
     if (stage === 0) {
       currentBattle.questions.forEach((list, index) => {
         if (gameRouter.judgeEmpty(list)) {
-          currentBattle.questions[index] = ['【超时】', '【超时】', '【超时】'];
+          currentBattle.questions[index] = ["【超时】", "【超时】", "【超时】"];
           currentBattle.jiemiAnswers[index] = [4, 4, 4];
           currentBattle.lanjieAnswers[index] = [4, 4, 4];
         }
@@ -140,11 +137,11 @@ async function cleanOldRoomAndGame() {
 
 async function handleMatchGroup() {
   const cache = getCache();
-  const GroupPool = cache.get('groupPool') || [];
+  const GroupPool = cache.get("groupPool") || [];
   const FullList = GroupPool.filter(
-    item => item.list && item.list.length >= matchRouter.SuccessLength,
+    (item) => item.list && item.list.length >= matchRouter.SuccessLength,
   );
-  FullList.forEach(async group => {
+  FullList.forEach(async (group) => {
     const now = new Date().getTime();
     const { groupIndex, startTime } = group;
     // 检查group成员是否都心跳在线
@@ -157,7 +154,7 @@ async function handleMatchGroup() {
     } else if (startTime < now) {
       const activeGame = await startGame(group);
       // 更新组内每个人的activeGame
-      group.list.forEach(matchData => {
+      group.list.forEach((matchData) => {
         const { userID } = matchData;
         cache.set(userID, {
           ...matchData,
@@ -172,12 +169,12 @@ async function handleMatchGroup() {
       group.startTime = null;
     }
     GroupPool[groupIndex] = group;
-    cache.set('groupPool', GroupPool);
+    cache.set("groupPool", GroupPool);
   });
 }
 
 async function startGame(group) {
-  const userList = group.list.map(item => {
+  const userList = group.list.map((item) => {
     const { _id } = item.userData;
     item.userData.id = _id;
     return item.userData;
@@ -192,7 +189,7 @@ function checkGroupPlayers(group) {
   const cache = getCache();
   let flag = true;
   const now = new Date().getTime();
-  group.list.forEach(data => {
+  group.list.forEach((data) => {
     const { userID } = data;
     const matchData = cache.get(userID);
     const { timeStamp } = matchData;
