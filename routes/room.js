@@ -97,11 +97,12 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
     return;
   }
   userList = userList.filter((user) => user.userInfo);
+  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
+  const ownRoom = roomOwnerID == _id;
+  
   if (ownerQuitGame) {
     userList.splice(0, 1);
   }
-  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
-  const ownRoom = roomOwnerID == _id;
 
   const playerFlag =
     MODE === "game"
