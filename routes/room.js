@@ -619,10 +619,10 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
     const { activeGame, userList } = item;
     // 若已有游戏的房间，则是旁观中
     if (activeGame) {
-      const userIndex = userList.map((e) => e.id).indexOf(userID);
-      if (userIndex > 3) {
-        resList[index].observe = true;
-      }
+      // const userIndex = userList.map((e) => e.id).indexOf(userID);
+      // if (userIndex > 3) {
+      resList[index].observe = true;
+      // }
     }
   });
   ctx.body = resList;
