@@ -532,6 +532,7 @@ router.get("/hall/list/:pageNum", sessionUser, async (ctx) => {
       userList: 1,
       activeGame: 1,
       userStatus: 1,
+      teamMode: 1,
     },
   )
     .skip(Start)
@@ -585,6 +586,7 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
       userList: 1,
       activeGame: 1,
       userStatus: 1,
+      teamMode: 1,
     },
   )
     .sort({ timeStamp: -1 })
@@ -632,7 +634,7 @@ async function checkRoomIsOver(roomList) {
   const resList = [];
   for (let i = 0, L = roomList.length; i < L; i++) {
     const room = roomList[i];
-    const { activeGame, _id } = room;
+    const { activeGame, _id, teamMode } = room;
     const game = await Games.findOne({
       _id: activeGame,
     });
@@ -648,14 +650,26 @@ async function checkRoomIsOver(roomList) {
       );
       resList.push(room);
     } else if (game.over) {
-      await Rooms.findOneAndUpdate(
-        {
-          _id,
-        },
-        {
-          over: true,
-        },
-      );
+      // 团队模式，游戏结束后，房间不解散
+      if (teamMode) {
+        await Rooms.findOneAndUpdate(
+          {
+            _id,
+          },
+          {
+            activeGame: null,
+          },
+        );
+      } else {
+        await Rooms.findOneAndUpdate(
+          {
+            _id,
+          },
+          {
+            over: true,
+          },
+        );
+      }
     } else {
       resList.push(room);
     }
