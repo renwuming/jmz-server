@@ -1,5 +1,5 @@
 const request = require("request-promise");
-const { validateUrl_wx } = require("./config");
+const { validateUrl_wx, adminList } = require("./config");
 
 const sessionUser = async function (ctx, next) {
   const ticket = ctx.request.header["x-ticket"];
@@ -12,6 +12,7 @@ const sessionUser = async function (ctx, next) {
         ticket,
       },
     });
+    user.isAdmin = adminList && adminList.includes(user.openid);
     ctx.state.user = user;
     await next();
   } catch (error) {

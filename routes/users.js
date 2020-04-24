@@ -1,27 +1,27 @@
-const router = require('koa-router')();
-const Users = require('../models/user');
-const Games = require('../models/game');
-const gameRouter = require('./game');
-const { sessionUser } = require('./middleware');
-const { mode, strongTip } = require('./config');
-const getCache = require('./cache');
+const router = require("koa-router")();
+const Users = require("../models/user");
+const Games = require("../models/game");
+const gameRouter = require("./game");
+const { sessionUser } = require("./middleware");
+const { mode, strongTip, adminList } = require("./config");
+const getCache = require("./cache");
 
-router.prefix('/users');
+router.prefix("/users");
 
-router.get('/gamedata/:id', sessionUser, async function(ctx, next) {
+router.get("/gamedata/:id", sessionUser, async function (ctx, next) {
   let { id } = ctx.params;
-  if (id === 'self') {
+  if (id === "self") {
     id = ctx.state.user._id;
   }
   const list = await gameHistoryData(id);
   const Sum = list.length;
   let winSum = 0;
   let pingSum = 0;
-  list.forEach(item => {
-    if (item.status === '胜利') {
+  list.forEach((item) => {
+    if (item.status === "胜利") {
       winSum++;
     }
-    if (item.status === '平局') {
+    if (item.status === "平局") {
       pingSum++;
     }
   });
@@ -36,11 +36,11 @@ router.get('/gamedata/:id', sessionUser, async function(ctx, next) {
   };
 });
 
-router.post('/validate', sessionUser, async function(ctx, next) {
-  // 获取在线匹配的数据
+router.post("/validate", sessionUser, async function (ctx, next) {
   const cache = getCache();
-  const { _id } = ctx.state.user;
+  const { _id, isAdmin } = ctx.state.user;
   const userID = _id.toString();
+  // 获取在线匹配的数据
   const matchData = cache.get(userID) || {};
   const { activeGame } = matchData;
   const historyList = strongTip ? 0 : await gameHistoryData(userID);
@@ -59,15 +59,16 @@ router.post('/validate', sessionUser, async function(ctx, next) {
     ...handleUserObject(ctx.state.user),
     onlineMatch: matchData.activeGame,
     history: historyList.length,
+    isAdmin,
   };
 });
 
-router.post('/', async function(ctx, next) {
+router.post("/", async function (ctx, next) {
   const { nick, secret } = ctx.request.body;
   if (!nick || !secret) {
     ctx.body = {
       code: 500,
-      error: '用户名 or 密码错误',
+      error: "用户名 or 密码错误",
     };
     return;
   }
@@ -101,7 +102,7 @@ function handleUserObject(data) {
   return data;
 }
 
-router.getWxUser = async id => {
+router.getWxUser = async (id) => {
   const user = await Users.findOne({
     _id: id,
   });
@@ -113,7 +114,7 @@ router.getWxUser = async id => {
   return null;
 };
 
-router.get('/v2/history/games/:pageNum', sessionUser, async function(ctx) {
+router.get("/v2/history/games/:pageNum", sessionUser, async function (ctx) {
   const { pageNum } = ctx.params;
   const Min = pageNum * 10;
   const Max = Min + 10;
@@ -121,7 +122,7 @@ router.get('/v2/history/games/:pageNum', sessionUser, async function(ctx) {
   _id = _id.toString();
 
   const list = await gameHistoryData(_id);
-  ctx.body = list.slice(Min, Max).map(item => {
+  ctx.body = list.slice(Min, Max).map((item) => {
     const { _id, userList, status } = item;
     return { _id, userList, status };
   });
@@ -134,20 +135,20 @@ async function gameHistoryData(id) {
   }).sort({ timeStamp: -1 });
 
   const result = [];
-  games.forEach(game => {
+  games.forEach((game) => {
     game = game.toObject();
     let { userList, battles } = game;
-    userList = userList.map(e => e.id.toString());
+    userList = userList.map((e) => e.id.toString());
     const userIndex = userList.indexOf(id);
     const teamIndex = userIndex >= 2 ? 1 : 0;
     const gameResult = gameRouter.handleSum(battles);
     const { winner } = gameResult;
     game.status =
       winner < 0 || winner === undefined
-        ? '平局'
+        ? "平局"
         : winner === teamIndex
-        ? '胜利'
-        : '失败';
+        ? "胜利"
+        : "失败";
     result.push(game);
   });
   return result;
