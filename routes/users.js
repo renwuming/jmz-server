@@ -141,7 +141,7 @@ async function gameHistoryData(id) {
     userList = userList.map((e) => e.id.toString());
     const userIndex = userList.indexOf(id);
     const teamIndex = userIndex >= 2 ? 1 : 0;
-    const gameResult = gameRouter.handleSum(battles);
+    const gameResult = gameRouter.handleSum(game);
     const { winner } = gameResult;
     game.status =
       winner < 0 || winner === undefined

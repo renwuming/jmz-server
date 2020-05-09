@@ -16,6 +16,7 @@ var productionSchema = new Schema(
     userStatus: Object, // 玩家的离线/在线状态
     relaxMode: Boolean, // 是否为赛季模式，true 休闲模式，false 赛季模式
     teamMode: Boolean, // 是否为团队模式
+    threeMode: Boolean, // 是否为三人模式
   },
   {
     timestamps: true,

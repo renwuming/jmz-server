@@ -50,7 +50,16 @@ const getGameData = async (userID, game) => {
   const userList = game.userList.map((item) => item.id.toString());
   let index = userList.indexOf(userID);
   if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
-  const { activeBattle, teams, over, battles, quickMode, teamMode, _id } = game;
+  const {
+    activeBattle,
+    teams,
+    over,
+    battles,
+    quickMode,
+    teamMode,
+    _id,
+    threeMode,
+  } = game;
   const L = userList.length;
   const teamL = Math.ceil(L / 2);
   let teamIndex = Math.floor(index / teamL);
@@ -129,7 +138,7 @@ const getGameData = async (userID, game) => {
   const history2 = getWxGameHistory(battles.slice(0, -1), 1 - teamIndex);
   const table1 = getHistoryTable(history1);
   const table2 = getHistoryTable(history2);
-  const gameResult = handleSum(battles);
+  const gameResult = handleSum(game);
   let { sumList, gameOver, winner, resultMap } = gameResult;
   if (gameOver) {
     if (!over) {
@@ -215,6 +224,7 @@ const getGameData = async (userID, game) => {
     stageName: stageMap[handleStageByGame(game)].name,
     userOnlineStatus,
     teamMode,
+    threeMode,
   };
 
   if (gameOver) {
@@ -237,10 +247,12 @@ const getGameData = async (userID, game) => {
 
 // 重新计算stage
 function handleStageByGame(game) {
-  const { activeBattle, battles } = game;
+  const { activeBattle, battles, threeMode } = game;
   const currentBattle = battles[activeBattle];
   const { questions } = currentBattle;
-  const jiamiFull = questions.every((list) => !judgeEmpty(list));
+  const jiamiFull = threeMode
+    ? !judgeEmpty(questions[0])
+    : questions.every((list) => !judgeEmpty(list));
   if (jiamiFull) {
     return 1;
   }
@@ -270,7 +282,11 @@ router.get("/wx/:id", sessionUser, getGame, async (ctx) => {
   ctx.body = data;
 });
 
-function handleSum(historylist) {
+function handleSum(game) {
+  const { battles: historylist, threeMode } = game;
+  if (threeMode) {
+    return handleSumThreeMode(game);
+  }
   const resultMap = [
     // 统计两队的得分情况
     {
@@ -331,6 +347,62 @@ function handleSum(historylist) {
   };
 }
 
+// 三人模式
+function handleSumThreeMode(game) {
+  const { battles: historylist, activeBattle } = game;
+
+  const resultMap = [
+    // 统计两队的得分情况
+    {
+      red: 0,
+      black: 0,
+      sum: 0,
+    },
+    {
+      red: 0,
+      black: 0,
+      sum: 0,
+    },
+  ];
+  historylist.forEach((round) => {
+    const { reds, blacks } = round;
+    reds &&
+      reds.forEach((red, teamIndex) => {
+        // 三人模式，只计算第一个队伍的拦截次数
+        if (red && teamIndex === 0) {
+          resultMap[teamIndex].red++;
+          resultMap[1 - teamIndex].sum++;
+        }
+      });
+    blacks &&
+      blacks.forEach((black, teamIndex) => {
+        // 三人模式，只计算第一个队伍的失误次数
+        if (black && teamIndex === 0) {
+          resultMap[teamIndex].black++;
+          resultMap[teamIndex].sum--;
+        }
+      });
+  });
+
+  let winner = -1;
+  const scoreDiff = Math.abs(resultMap[0].sum - resultMap[1].sum);
+
+  // 五回合之内
+  if (activeBattle < 5) {
+    if (scoreDiff >= 2) winner = 1;
+  } else {
+    if (scoreDiff >= 2) winner = 1;
+    else winner = 0;
+  }
+
+  return {
+    gameOver: winner >= 0,
+    winner,
+    sumList: resultMap.map((r) => r.sum),
+    resultMap,
+  };
+}
+
 function getWxGameHistory(list, teamIndex) {
   const history = [];
   list.forEach((item, index) => {
@@ -368,7 +440,7 @@ function getHistoryTable(history) {
     const { list } = item;
     list.forEach((item) => {
       const { code, question } = item;
-      table[code].push(question);
+      table[code] && table[code].push(question);
     });
   });
   return table;
@@ -468,7 +540,14 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
 });
 
 async function updateGameAfterSubmit(activeBattle, newBattleData, game) {
-  const { teamMode, userList } = game;
+  const { teamMode, userList, threeMode } = game;
+
+  // 三人模式，有特别的规则
+  if (threeMode) {
+    await updateGameAfterSubmitThreeMode(activeBattle, newBattleData, game);
+    return;
+  }
+
   const { codes, jiemiAnswers, questions, lanjieAnswers } = newBattleData;
   const jiamiFull = questions.every((list) => !judgeEmpty(list));
   const jiemiFull = jiemiAnswers.every((list) => !judgeEmpty(list));
@@ -509,7 +588,73 @@ async function updateGameAfterSubmit(activeBattle, newBattleData, game) {
   }
 
   // 判断游戏是否结束
-  const gameResult = handleSum(game.battles);
+  const gameResult = handleSum(game);
+  let { gameOver } = gameResult;
+  if (gameOver && !game.over) {
+    // 若游戏已结束，更新数据库
+    await Games.findOneAndUpdate(
+      {
+        _id: game._id,
+      },
+      {
+        over: gameOver,
+      },
+    );
+  }
+
+  await Games.findOneAndUpdate(
+    {
+      _id: game._id,
+    },
+    {
+      battles: game.battles,
+      activeBattle,
+    },
+  );
+}
+
+async function updateGameAfterSubmitThreeMode(
+  activeBattle,
+  newBattleData,
+  game,
+) {
+  const { codes, jiemiAnswers, questions, lanjieAnswers } = newBattleData;
+  const jiamiFull = !judgeEmpty(questions[0]);
+  const jiemiFull = !judgeEmpty(jiemiAnswers[0]);
+  const lanjieFull = !judgeEmpty(lanjieAnswers[0]);
+  // 若为第一轮，不需要拦截
+  if (activeBattle === 0 && jiamiFull && jiemiFull) {
+    codes.forEach((codes, teamIndex) => {
+      const answerStr = jiemiAnswers[teamIndex].join("");
+      const codeStr = codes.join("");
+      if (answerStr !== codeStr) {
+        newBattleData.blacks[teamIndex] = true;
+      }
+    });
+    game.battles[activeBattle] = newBattleData;
+    const newBattle = createThreeModeBattle(activeBattle);
+    game.battles.push(newBattle);
+    activeBattle++;
+  } else if (jiamiFull && jiemiFull && lanjieFull) {
+    codes.forEach((codes, teamIndex) => {
+      const lanjieStr = lanjieAnswers[teamIndex].join("");
+      const answerStr = jiemiAnswers[teamIndex].join("");
+      const codeStr = codes.join("");
+      if (answerStr !== codeStr) {
+        newBattleData.blacks[teamIndex] = true;
+      }
+      if (lanjieStr === codeStr) {
+        newBattleData.reds[teamIndex] = true;
+      }
+    });
+    game.battles[activeBattle] = newBattleData;
+    const newBattle = createThreeModeBattle(activeBattle);
+    game.battles.push(newBattle);
+    activeBattle++;
+  }
+
+  // 判断游戏是否结束
+  const gameResult = handleSum(game);
   let { gameOver } = gameResult;
   if (gameOver && !game.over) {
     // 若游戏已结束，更新数据库
@@ -623,6 +768,35 @@ function createTeamModeBattle(lastBattle, L) {
   };
 }
 
+function createThreeModeBattle(lastBattle) {
+  const newBattle = lastBattle + 1;
+  // 分组界线
+  const desUsers = [newBattle % 2, -1];
+  const jiemiUsers = [(newBattle + 1) % 2, -1];
+  // 第一回合，无拦截
+  const lanjieUsers = newBattle > 0 ? [2, -1] : [-1, -1];
+  return {
+    desUsers,
+    jiemiUsers,
+    lanjieUsers,
+    codes: [getCodes(), [-1, -1, -1]],
+    questions: [
+      ["", "", ""],
+      ["", "", ""],
+    ],
+    jiemiAnswers: [
+      [-1, -1, -1],
+      [-1, -1, -1],
+    ],
+    lanjieAnswers: [
+      [-1, -1, -1],
+      [-1, -1, -1],
+    ],
+    blacks: [],
+    reds: [],
+  };
+}
+
 function getCodes() {
   const list = [0, 1, 2, 3];
   const del = Math.floor(Math.random() * 4);
@@ -663,7 +837,7 @@ async function handleSeasonRank(userList) {
       const { userList, battles } = game;
       const userIndex = userList.map((e) => e.id).indexOf(id);
       const teamIndex = userIndex >= 2 ? 1 : 0;
-      const gameResult = handleSum(battles);
+      const gameResult = handleSum(game);
       const { winner } = gameResult;
       if (winner < 0 || winner === undefined) {
         return;
@@ -705,8 +879,13 @@ router.gameInit = async function (
   const teamL = Math.ceil(L / 2);
   const userList1 = userList.slice(0, teamL);
   const userList2 = userList.slice(teamL);
+  const threeMode = userList.length === 3;
 
-  const firstBattle = teamMode ? createTeamModeBattle(-1, L) : createBattle(-1);
+  const firstBattle = threeMode
+    ? createThreeModeBattle(-1)
+    : teamMode
+    ? createTeamModeBattle(-1, L)
+    : createBattle(-1);
   const [team0, team1] = getTeamNames();
   const [words0, words1] = await getWords();
   const data = {
@@ -720,7 +899,7 @@ router.gameInit = async function (
       {
         name: team1,
         userList: userList2,
-        words: words1,
+        words: threeMode ? ["-", "-", "-", "-"] : words1,
       },
     ],
     battles: [firstBattle],
@@ -729,6 +908,7 @@ router.gameInit = async function (
     quickMode,
     relaxMode,
     teamMode,
+    threeMode,
   };
   return data;
 };

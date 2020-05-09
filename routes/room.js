@@ -106,10 +106,10 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
 
   const playerFlag =
     MODE === "game"
-      ? userList.length >= 4
-      : userList.length === 1 || userList.length >= 4;
+      ? userList.length >= 3 // 普通模式至少3人
+      : userList.length === 1 || userList.length >= 3;
 
-  const userMax = teamMode ? 10 : 4; // 团队模式最多10人
+  const userMax = teamMode ? 10 : 4; // 团队模式最多10人，普通模式最多4人
   if (ownRoom && playerFlag) {
     const gameData = await GameRouter.gameInit(
       userList.slice(0, userMax),
