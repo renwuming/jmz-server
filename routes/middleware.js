@@ -12,7 +12,8 @@ const sessionUser = async function (ctx, next) {
         ticket,
       },
     });
-    user.isAdmin = adminList && adminList.includes(user.openid);
+    user.isAdmin = true; // 任何人都可以创建团队模式
+    // adminList && adminList.includes(user.openid);
     ctx.state.user = user;
     await next();
   } catch (error) {
