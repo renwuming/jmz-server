@@ -5,7 +5,7 @@ const Rooms = require("../models/room");
 const { sessionUser } = require("./middleware");
 const GameRouter = require("./game");
 const UserRouter = require("./users");
-const { mode: MODE, adminList } = require("./config");
+const { mode: MODE } = require("./config");
 
 router.prefix("/rooms");
 
@@ -526,7 +526,7 @@ router.post("/", sessionUser, async (ctx, next) => {
 
 // 创建房间 - v2
 router.post("/v2/create", sessionUser, async (ctx, next) => {
-  const { _id, userInfo, isAdmin } = ctx.state.user;
+  const { _id, userInfo } = ctx.state.user;
   const { publicStatus, random, timer, gameMode } = ctx.request.body;
   const userID = _id.toString();
   const ownRoom = await Rooms.findOne({
@@ -535,12 +535,12 @@ router.post("/v2/create", sessionUser, async (ctx, next) => {
     activeGame: { $in: [undefined, null] },
   });
   // 如果是非管理员，且已经拥有未结束的房间，则返回
-  if (ownRoom && !isAdmin) {
-    ctx.body = {
-      id: ownRoom._id,
-    };
-    return;
-  }
+  // if (ownRoom) {
+  //   ctx.body = {
+  //     id: ownRoom._id,
+  //   };
+  //   return;
+  // }
 
   let room = await Rooms.create({
     timeStamp: +new Date(),

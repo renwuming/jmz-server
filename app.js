@@ -24,7 +24,7 @@ const season = require("./routes/season");
 const onlineMatch = require("./routes/onlineMatch");
 
 global.mongoose = mongoose.connect("mongodb://localhost:27017/jmz", {
-  useNewUrlParser: true
+  useNewUrlParser: true,
 });
 
 global.db = mongoose.connection;
@@ -32,12 +32,12 @@ global.db = mongoose.connection;
 // cors
 app.use(
   cors({
-    origin: function(ctx) {
+    origin: function (ctx) {
       return ctx.request.header.origin;
     },
     maxAge: 5,
-    credentials: true
-  })
+    credentials: true,
+  }),
 );
 
 // error handler
@@ -46,8 +46,8 @@ onerror(app);
 // middlewares
 app.use(
   bodyparser({
-    enableTypes: ["json", "form", "text"]
-  })
+    enableTypes: ["json", "form", "text"],
+  }),
 );
 app.use(json());
 app.use(logger());
@@ -55,8 +55,8 @@ app.use(require("koa-static")(__dirname + "/public"));
 
 app.use(
   views(__dirname + "/views", {
-    extension: "pug"
-  })
+    extension: "pug",
+  }),
 );
 
 // session
