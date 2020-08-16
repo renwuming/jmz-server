@@ -444,9 +444,9 @@ function handleOnlineStatus(roomData) {
   return userList
     .map(item => item.id)
     .map(id => {
-      // 在线的标准为，3s内更新过timeStamp
+      // 在线的标准为，10s内更新过timeStamp
       const timeStamp = userStatus[id];
-      return timeStamp > current - 3000;
+      return timeStamp > current - 10000;
     });
 }
 
