@@ -12,21 +12,26 @@ router.prefix("/words");
 router.post("/add", sessionUser, async ctx => {
   const { _id } = ctx.state.user;
   const { word } = ctx.request.body;
-  const exists = await Words.findOne({
+  const exists = await Codes.findOne({
     content: word,
   });
 
-  if (exists || dictionary.includes(word)) {
+  if (exists) {
     ctx.body = {
       code: 501,
       error: "词条已存在",
     };
   } else {
-    const newWord = new Words({
+    const newCode = new Codes({
       content: word,
-      userID: _id,
+      category: [],
+      difficult: false, // 是否困难
+      contributor: _id, // 贡献者_id
+      confirm: false, // 是否入库
+      agreeList: [],
+      opposeList: [],
     });
-    await newWord.save();
+    await newCode.save();
     ctx.body = null;
   }
 });
