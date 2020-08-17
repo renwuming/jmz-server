@@ -2,10 +2,10 @@ const router = require("koa-router")();
 const Words = require("../models/word");
 const Codes = require("../models/code");
 const codeCategories = require("../models/codeCategory");
-const dictionary = require("./code");
 const { sessionUser, sessionUser_PC, sessionAuditor } = require("./middleware");
 const { getUserDataUrl, getUserListUrl } = require("./config");
 const request = require("request-promise");
+const _ = require("lodash");
 
 router.prefix("/words");
 
@@ -35,6 +35,26 @@ router.post("/add", sessionUser, async ctx => {
     ctx.body = null;
   }
 });
+
+// 查找相似词汇
+async function getSimilarCodes(data) {
+  const { content: code } = data;
+  const L = code.length;
+  let result = [];
+  for (let i = 0; i < L; i++) {
+    const char = code[i];
+    const reg = new RegExp(char);
+    const list = await Codes.find(
+      { content: reg, discarded: { $ne: true } },
+      { content: 1, category: 1, _id: 1, discarded: 1, confirm: 1 },
+    ).lean();
+    result = result.concat(list);
+  }
+
+  result = _.uniqBy(result, "content");
+  _.remove(result, item => item.content === code);
+  return result;
+}
 
 router.get("/category/list", async ctx => {
   ctx.body = await codeCategories.find().lean();
@@ -84,6 +104,7 @@ router.get("/audit", sessionUser_PC, sessionAuditor, async ctx => {
   ctx.body = {
     ...result,
     amount,
+    similar: result ? await getSimilarCodes(result) : [],
   };
 });
 
@@ -142,6 +163,7 @@ router.get("/confirm", sessionUser_PC, sessionAuditor, async ctx => {
   ctx.body = {
     ...result,
     amount,
+    similar: result ? await getSimilarCodes(result) : [],
   };
 });
 
