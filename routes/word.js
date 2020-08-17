@@ -56,6 +56,13 @@ router.get("/category/list/:categoryID", async ctx => {
 
 router.get("/audit", sessionUser_PC, sessionAuditor, async ctx => {
   const { lastcode } = ctx.request.query;
+  const amount = (
+    await Codes.find({
+      $or: [{ category: { $exists: false } }, { category: { $size: 0 } }], // 尚未分类
+      confirm: { $ne: true }, // 未确认
+      discarded: { $ne: true }, // 未被丢弃
+    }).lean()
+  ).length;
   const randomCode = await Codes.aggregate([
     {
       $match: {
@@ -67,11 +74,17 @@ router.get("/audit", sessionUser_PC, sessionAuditor, async ctx => {
     { $sample: { size: 2 } },
   ]);
   const resultCode = randomCode.filter(e => e.content !== lastcode);
+
+  let result;
   if (resultCode.length > 0) {
-    ctx.body = await handleCode(resultCode[0]);
+    result = await handleCode(resultCode[0]);
   } else {
-    ctx.body = await handleCode(randomCode[0]);
+    result = await handleCode(randomCode[0]);
   }
+  ctx.body = {
+    ...result,
+    amount,
+  };
 });
 
 router.post("/audit", sessionUser_PC, sessionAuditor, async ctx => {
@@ -92,6 +105,17 @@ router.post("/audit", sessionUser_PC, sessionAuditor, async ctx => {
 router.get("/confirm", sessionUser_PC, sessionAuditor, async ctx => {
   const { unionid, isSuperAuditor } = ctx.state.user;
   const { lastcode } = ctx.request.query;
+  const amount = (
+    await Codes.find({
+      category: { $nin: [undefined, []] }, // 已经分类
+      confirm: { $ne: true }, // 未确认
+      discarded: { $ne: true }, // 未被丢弃
+      agreeList: isSuperAuditor ? { $ne: "never exists" } : { $nin: [unionid] }, // 没有“赞同”过
+      opposeList: isSuperAuditor
+        ? { $ne: "never exists" }
+        : { $nin: [unionid] }, // 没有“反对”过
+    })
+  ).length;
   const randomCode = await Codes.aggregate([
     {
       $match: {
@@ -109,11 +133,16 @@ router.get("/confirm", sessionUser_PC, sessionAuditor, async ctx => {
     { $sample: { size: 2 } },
   ]);
   const resultCode = randomCode.filter(e => e.content !== lastcode);
+  let result;
   if (resultCode.length > 0) {
-    ctx.body = await handleCode(resultCode[0]);
+    result = await handleCode(resultCode[0]);
   } else {
-    ctx.body = await handleCode(randomCode[0]);
+    result = await handleCode(randomCode[0]);
   }
+  ctx.body = {
+    ...result,
+    amount,
+  };
 });
 
 router.post("/confirm", sessionUser_PC, sessionAuditor, async ctx => {
