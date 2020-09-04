@@ -362,7 +362,15 @@ router.get("/wx/:id", sessionUser, getRoom, async (ctx, next) => {
 async function getRoomData(userID, originRoomData) {
   // 检查room的游戏是否结束
   const [roomData] = await checkRoomIsOver([originRoomData]);
-  let { userList, activeGame, over, _id, userStatus, timeStamp } = roomData;
+  let {
+    userList,
+    activeGame,
+    over,
+    _id,
+    userStatus,
+    timeStamp,
+    gameHistory,
+  } = roomData;
 
   userList = await updateAndHandleUserList(userList);
   const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
@@ -386,6 +394,17 @@ async function getRoomData(userID, originRoomData) {
 
   const roomStatus = handleRoomStatus(roomData);
 
+  // 历史游戏记录
+  const gameHistoryList = [];
+  for (let i = 0; i < gameHistory.length; i++) {
+    const _id = gameHistory[i];
+    const gameData = await Games.findOne(
+      { _id },
+      { userList: 1, timeStamp: 1 },
+    );
+    gameHistoryList.push(gameData);
+  }
+
   await Rooms.findOneAndUpdate(
     {
       _id: roomData._id,
@@ -407,6 +426,7 @@ async function getRoomData(userID, originRoomData) {
     over,
     userOnlineStatus,
     ...roomStatus,
+    gameHistory: gameHistoryList,
   };
 }
 
@@ -686,7 +706,7 @@ async function checkRoomIsOver(roomList) {
   const resList = [];
   for (let i = 0, L = roomList.length; i < L; i++) {
     const room = roomList[i];
-    const { activeGame, _id, teamMode } = room;
+    let { activeGame, _id, gameHistory } = room;
     const game = await Games.findOne({
       _id: activeGame,
     });
@@ -703,12 +723,15 @@ async function checkRoomIsOver(roomList) {
       resList.push({ ...room, activeGame: null, over: false });
     } else if (game.over) {
       // 游戏结束后，房间不解散
+      if (!gameHistory) gameHistory = [];
+      gameHistory.push(activeGame);
       await Rooms.findOneAndUpdate(
         {
           _id,
         },
         {
           activeGame: null,
+          gameHistory,
         },
       );
       resList.push({ ...room, activeGame: null });

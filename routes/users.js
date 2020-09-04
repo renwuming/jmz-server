@@ -112,7 +112,7 @@ async function gameHistoryData(id) {
   const result = [];
   games.forEach(game => {
     game = game.toObject();
-    let { userList, battles } = game;
+    let { userList } = game;
     userList = userList.map(e => e.id.toString());
     const userIndex = userList.indexOf(id);
     const teamIndex = userIndex >= 2 ? 1 : 0;

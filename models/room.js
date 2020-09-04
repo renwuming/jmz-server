@@ -1,4 +1,4 @@
-var mongoose = require('mongoose');
+var mongoose = require("mongoose");
 
 var Schema = mongoose.Schema;
 
@@ -15,10 +15,11 @@ var productionSchema = new Schema(
     teamMode: Boolean, // 是否为团队模式
     userStatus: Object, // 玩家的离线/在线状态
     ownerQuitGame: Boolean, // 房主是否参与游戏
+    gameHistory: Array, // 历史游戏记录
   },
   {
     timestamps: true,
   },
 );
 
-module.exports = mongoose.model('room', productionSchema);
+module.exports = mongoose.model("room", productionSchema);
