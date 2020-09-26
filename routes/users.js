@@ -98,8 +98,8 @@ router.get("/v2/history/games/:pageNum", sessionUser, async function (ctx) {
 
   const list = await gameHistoryData(_id);
   ctx.body = list.slice(Min, Max).map(item => {
-    const { _id, userList, status } = item;
-    return { _id, userList, status };
+    const { _id, userList, status, timeStamp } = item;
+    return { _id, userList, status, timeStamp };
   });
 });
 
