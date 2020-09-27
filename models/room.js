@@ -17,6 +17,7 @@ var productionSchema = new Schema(
     ownerQuitGame: Boolean, // 房主是否参与游戏
     gameHistory: Array, // 历史游戏记录
     owner: String, // 房主的_id
+    specialRules: Object, // 特殊规则
   },
   {
     timestamps: true,

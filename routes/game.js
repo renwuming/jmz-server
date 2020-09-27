@@ -451,8 +451,21 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
   const { _id } = ctx.state.user;
   const { battle, battleIndex } = ctx.request.body;
   const { game } = ctx.state;
-  let { activeBattle, teams } = game;
+  let { activeBattle, teams, specialRules } = game;
+  const { singleWord } = specialRules || {};
   const qList = battle.map(item => item.question);
+
+  // 检查特殊规则
+  if (singleWord) {
+    const errorList = qList.filter(q => q.length > 1);
+    if (errorList.length >= 1) {
+      ctx.body = {
+        code: 501,
+        error: `【单字规则】情报长度需要<=1，以下情报犯规：${errorList}`,
+      };
+      return;
+    }
+  }
 
   // 是否包含违法内容
   const secResult = await msgListSecCheck(qList);

@@ -1,4 +1,4 @@
-var mongoose = require('mongoose');
+var mongoose = require("mongoose");
 
 var Schema = mongoose.Schema;
 
@@ -17,10 +17,11 @@ var productionSchema = new Schema(
     relaxMode: Boolean, // 是否为赛季模式，true 休闲模式，false 赛季模式
     teamMode: Boolean, // 是否为团队模式
     threeMode: Boolean, // 是否为三人模式
+    specialRules: Object, // 特殊规则
   },
   {
     timestamps: true,
   },
 );
 
-module.exports = mongoose.model('game', productionSchema);
+module.exports = mongoose.model("game", productionSchema);

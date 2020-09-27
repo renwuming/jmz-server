@@ -47,6 +47,7 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
     relaxMode,
     ownerQuitGame,
     teamMode,
+    specialRules,
   } = roomData;
   // 已有游戏，则直接返回
   if (activeGame) {
@@ -88,7 +89,7 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
       relaxMode,
       teamMode,
     );
-    const game = await Games.create(gameData);
+    const game = await Games.create({ ...gameData, specialRules });
     const newGameId = game._id;
     await Rooms.findOneAndUpdate(
       {
@@ -443,7 +444,13 @@ async function updateAndHandleUserList(list) {
 // 创建房间 - v2
 router.post("/v2/create", sessionUser, async (ctx, next) => {
   const { _id, userInfo } = ctx.state.user;
-  const { publicStatus, random, timer, gameMode } = ctx.request.body;
+  const {
+    publicStatus,
+    random,
+    timer,
+    gameMode,
+    specialRules,
+  } = ctx.request.body;
   const userID = _id.toString();
 
   let room = await Rooms.create({
@@ -461,6 +468,7 @@ router.post("/v2/create", sessionUser, async (ctx, next) => {
     relaxMode: gameMode !== 0,
     teamMode: gameMode === 2,
     gameHistory: [],
+    specialRules,
   });
 
   ctx.body = {
