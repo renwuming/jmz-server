@@ -25,57 +25,15 @@ async function getRoom(ctx, next) {
   }
 }
 
-// 小程序 - 开始某房间的游戏
-router.post("/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
-  const { _id } = ctx.state.user;
-  const { randomMode, quickMode } = ctx.request.body;
-  const roomData = ctx.state.room;
-  let { userList, activeGame } = roomData;
-  // 已有游戏，则直接返回
-  if (activeGame) {
-    ctx.body = {
-      id: activeGame,
-    };
-    return;
-  }
-
-  userList = userList.filter(user => user.userInfo);
-  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
-  const ownRoom = roomOwnerID == _id;
-
-  const playerFlag =
-    MODE === "game"
-      ? userList.length >= 4
-      : userList.length === 1 || userList.length >= 4;
-
-  if (ownRoom && playerFlag) {
-    const gameData = await GameRouter.gameInit(
-      userList.slice(0, 4),
-      randomMode,
-      quickMode,
-    );
-    const game = await Games.create(gameData);
-    const newGameId = game._id;
-    await Rooms.findOneAndUpdate(
-      {
-        _id: roomData._id,
-      },
-      {
-        $set: {
-          activeGame: newGameId,
-        },
-      },
-    );
-    ctx.body = {
-      id: newGameId,
-    };
-  } else {
-    ctx.body = {
-      code: 501,
-      error: "人数不足",
-    };
-  }
-});
+function judgeOwnRoomOrNot(roomData, userID) {
+  const { userList, owner } = roomData;
+  const roomOwnerID = owner
+    ? owner
+    : userList.length > 0
+    ? userList[0].id
+    : null;
+  return roomOwnerID.toString() === userID.toString();
+}
 
 // 小程序 - 开始某房间的游戏v2
 router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
@@ -98,8 +56,7 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
     return;
   }
   userList = userList.filter(user => user.userInfo);
-  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
-  const ownRoom = roomOwnerID == _id;
+  const ownRoom = judgeOwnRoomOrNot(roomData, _id);
 
   if (ownerQuitGame) {
     userList.splice(0, 1);
@@ -193,8 +150,9 @@ router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
   if (roomData) {
     const userList = roomData.userList.map(user => user.id.toString());
     const userIndex = userList.indexOf(_id.toString());
+    const ownRoom = judgeOwnRoomOrNot(roomData, _id);
     // 若为房主，则解散房间
-    if (userIndex === 0) {
+    if (ownRoom) {
       await Rooms.remove({
         _id: roomData._id,
       });
@@ -224,11 +182,10 @@ router.post("/:id/edituserlist/:index", sessionUser, getRoom, async ctx => {
   const { userList } = roomData;
 
   if (roomData) {
-    const _userList = userList.map(user => user.id.toString());
-    const userIndex = _userList.indexOf(_id.toString());
-    if (userIndex === 0) {
+    const ownRoom = judgeOwnRoomOrNot(roomData, _id);
+    if (ownRoom) {
       const editUser = userList.splice(index, 1);
-      roomData.userList = [userList[0], ...editUser, ...userList.slice(1)];
+      roomData.userList = [...editUser, ...userList];
       await Rooms.updateOne(
         {
           _id: roomData._id,
@@ -262,9 +219,8 @@ router.post(
     const { userList } = roomData;
 
     if (roomData) {
-      const _userList = userList.map(user => user.id.toString());
-      const userIndex = _userList.indexOf(_id.toString());
-      if (userIndex === 0) {
+      const ownRoom = judgeOwnRoomOrNot(roomData, _id);
+      if (ownRoom) {
         userList.splice(index, 1);
         roomData.userList = userList;
         await Rooms.updateOne(
@@ -373,8 +329,8 @@ async function getRoomData(userID, originRoomData) {
   } = roomData;
 
   userList = await updateAndHandleUserList(userList);
-  const roomOwnerID = userList.length > 0 ? userList[0].id.toString() : null;
-  const ownRoom = roomOwnerID == userID;
+
+  const ownRoom = judgeOwnRoomOrNot(roomData, userID);
   const roomIndex = userList
     .map(user => user.id.toString())
     .indexOf(userID.toString());
@@ -484,83 +440,11 @@ async function updateAndHandleUserList(list) {
   return userList;
 }
 
-// 获取已有房间
-router.get("/ownroom", sessionUser, async ctx => {
-  const { _id } = ctx.state.user;
-  const userID = _id.toString();
-  const ownRoom = await Rooms.findOne({
-    "userList.0.id": userID,
-    over: { $ne: true },
-    activeGame: { $in: [undefined, null] },
-  });
-  // 如果已经拥有未结束的房间，则返回
-  if (ownRoom) {
-    ctx.body = {
-      id: ownRoom._id,
-    };
-    return;
-  } else {
-    ctx.body = {
-      id: null,
-    };
-  }
-});
-
-// 创建房间
-router.post("/", sessionUser, async (ctx, next) => {
-  const { _id, userInfo } = ctx.state.user;
-  const { publicStatus, random, timer, relaxMode } = ctx.request.body;
-  const userID = _id.toString();
-  const ownRoom = await Rooms.findOne({
-    "userList.0.id": userID,
-    over: { $ne: true },
-    activeGame: { $in: [undefined, null] },
-  });
-  // 如果已经拥有未结束的房间，则返回
-  if (ownRoom) {
-    ctx.body = {
-      id: ownRoom._id,
-    };
-    return;
-  }
-
-  let room = await Rooms.create({
-    timeStamp: +new Date(),
-    userList: [
-      {
-        id: userID,
-        userInfo,
-      },
-    ],
-    random,
-    timer,
-    publicStatus,
-    relaxMode,
-    gameHistory: [],
-  });
-
-  ctx.body = {
-    id: room._id,
-  };
-});
-
 // 创建房间 - v2
 router.post("/v2/create", sessionUser, async (ctx, next) => {
   const { _id, userInfo } = ctx.state.user;
   const { publicStatus, random, timer, gameMode } = ctx.request.body;
   const userID = _id.toString();
-  const ownRoom = await Rooms.findOne({
-    "userList.0.id": userID,
-    over: { $ne: true },
-    activeGame: { $in: [undefined, null] },
-  });
-  // 如果是非管理员，且已经拥有未结束的房间，则返回
-  // if (ownRoom) {
-  //   ctx.body = {
-  //     id: ownRoom._id,
-  //   };
-  //   return;
-  // }
 
   let room = await Rooms.create({
     timeStamp: +new Date(),
@@ -570,6 +454,7 @@ router.post("/v2/create", sessionUser, async (ctx, next) => {
         userInfo,
       },
     ],
+    owner: _id.toString(),
     random,
     timer,
     publicStatus,
@@ -620,9 +505,7 @@ router.get("/hall/list/:pageNum", sessionUser, async ctx => {
     const index = userList.map(user => user.id).indexOf(_id.toString());
     if (index >= 0) {
       room.inRoom = true;
-      if (index === 0) {
-        room.ownRoom = true;
-      }
+      room.ownRoom = judgeOwnRoomOrNot(room, _id);
     }
     room.userOnlineStatus = handleOnlineStatus(room);
   });
@@ -667,11 +550,7 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
   // 处理房间的游戏over状态
   roomList = await checkRoomIsOver(roomList);
   roomList.forEach(room => {
-    const { userList } = room;
-    const index = userList.map(user => user.id).indexOf(_id.toString());
-    if (index === 0) {
-      room.ownRoom = true;
-    }
+    room.ownRoom = judgeOwnRoomOrNot(room, _id);
     room.userOnlineStatus = handleOnlineStatus(room);
   });
 

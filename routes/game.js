@@ -841,9 +841,11 @@ async function handleSeasonRank(userList) {
       createdAt: { $gt: startAt },
     }).lean();
     seasonGames.forEach(game => {
-      const { userList, battles } = game;
+      const { userList } = game;
       const userIndex = userList.map(e => e.id).indexOf(id);
-      const teamIndex = userIndex >= 2 ? 1 : 0;
+      const L = userList.length;
+      const teamL = Math.ceil(L / 2);
+      const teamIndex = Math.floor(userIndex / teamL);
       const gameResult = handleSum(game);
       const { winner } = gameResult;
       if (winner < 0 || winner === undefined) {
