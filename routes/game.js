@@ -47,7 +47,7 @@ const getGameData = async (userID, game) => {
     ctx.body = {};
     return;
   }
-  const userList = game.userList.map((item) => item.id.toString());
+  const userList = game.userList.map(item => item.id.toString());
   let index = userList.indexOf(userID);
   if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
   const {
@@ -74,8 +74,8 @@ const getGameData = async (userID, game) => {
     jiemiAnswers,
     lanjieAnswers,
   } = battle;
-  questionStrList = questions.map((question) =>
-    question ? question.map((str) => str.trim()) : ["", "", ""],
+  questionStrList = questions.map(question =>
+    question ? question.map(str => str.trim()) : ["", "", ""],
   );
 
   // 处理battle数据
@@ -83,9 +83,9 @@ const getGameData = async (userID, game) => {
     desUsers,
     jiemiUsers,
     lanjieUsers,
-    jiamiStatus: questionStrList.map((e) => !judgeEmpty(e)),
-    jiemiStatus: jiemiAnswers.map((e) => !judgeEmpty(e)),
-    lanjieStatus: lanjieAnswers.map((e) => !judgeEmpty(e)),
+    jiamiStatus: questionStrList.map(e => !judgeEmpty(e)),
+    jiemiStatus: jiemiAnswers.map(e => !judgeEmpty(e)),
+    lanjieStatus: lanjieAnswers.map(e => !judgeEmpty(e)),
     codes: [
       [-1, -1, -1],
       [-1, -1, -1],
@@ -191,7 +191,7 @@ const getGameData = async (userID, game) => {
       userStatus,
     },
   );
-  const userOnlineStatus = userList.map((id) => {
+  const userOnlineStatus = userList.map(id => {
     // 在线的标准为，10s内更新过timeStamp
     const timeStamp = userStatus[id];
     return timeStamp > now - 10000;
@@ -200,7 +200,7 @@ const getGameData = async (userID, game) => {
   const bodyData = {
     id: _id,
     userIndex: index,
-    userList: game.userList.map((user) => ({ id: user.id, ...user.userInfo })),
+    userList: game.userList.map(user => ({ id: user.id, ...user.userInfo })),
     teamNames: getTeamNames(),
     battleData,
     battle: battleList,
@@ -252,7 +252,7 @@ function handleStageByGame(game) {
   const { questions } = currentBattle;
   const jiamiFull = threeMode
     ? !judgeEmpty(questions[0])
-    : questions.every((list) => !judgeEmpty(list));
+    : questions.every(list => !judgeEmpty(list));
   if (jiamiFull) {
     return 1;
   }
@@ -265,18 +265,18 @@ function judgeEmpty(list) {
     return list.join("").length <= 0;
   }
   if (type === "number") {
-    return list.some((n) => n < 0);
+    return list.some(n => n < 0);
   }
 }
 
-router.get("/:id", getGame, async (ctx) => {
+router.get("/:id", getGame, async ctx => {
   const _id = ctx.state.user ? ctx.state.user._id : "";
   const data = await getGameData(_id.toString(), ctx.state.game);
   ctx.body = data;
 });
 
 // 小程序 - 获取游戏数据
-router.get("/wx/:id", sessionUser, getGame, async (ctx) => {
+router.get("/wx/:id", sessionUser, getGame, async ctx => {
   const _id = ctx.state.user ? ctx.state.user._id : "";
   const data = await getGameData(_id.toString(), ctx.state.game);
   ctx.body = data;
@@ -300,7 +300,7 @@ function handleSum(game) {
       sum: 0,
     },
   ];
-  historylist.forEach((round) => {
+  historylist.forEach(round => {
     const { reds, blacks } = round;
     reds &&
       reds.forEach((red, teamIndex) => {
@@ -342,7 +342,7 @@ function handleSum(game) {
   return {
     gameOver,
     winner,
-    sumList: resultMap.map((r) => r.sum),
+    sumList: resultMap.map(r => r.sum),
     resultMap,
   };
 }
@@ -364,7 +364,7 @@ function handleSumThreeMode(game) {
       sum: 0,
     },
   ];
-  historylist.forEach((round) => {
+  historylist.forEach(round => {
     const { reds, blacks } = round;
     reds &&
       reds.forEach((red, teamIndex) => {
@@ -398,7 +398,7 @@ function handleSumThreeMode(game) {
   return {
     gameOver: winner >= 0,
     winner,
-    sumList: resultMap.map((r) => r.sum),
+    sumList: resultMap.map(r => r.sum),
     resultMap,
   };
 }
@@ -436,9 +436,9 @@ function getWxGameHistory(list, teamIndex) {
 
 function getHistoryTable(history) {
   const table = [[], [], [], []];
-  history.forEach((item) => {
+  history.forEach(item => {
     const { list } = item;
-    list.forEach((item) => {
+    list.forEach(item => {
       const { code, question } = item;
       table[code] && table[code].push(question);
     });
@@ -452,14 +452,12 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
   const { battle, battleIndex } = ctx.request.body;
   const { game } = ctx.state;
   let { activeBattle, teams } = game;
-  const qList = battle.map((item) => item.question);
+  const qList = battle.map(item => item.question);
 
   // 是否包含违法内容
   const secResult = await msgListSecCheck(qList);
   if (secResult && secResult.length > 0) {
-    const errorList = secResult
-      .map((index) => `第${index + 1}个内容`)
-      .join("，");
+    const errorList = secResult.map(index => `第${index + 1}个内容`).join("，");
     ctx.body = {
       code: 501,
       error: `您所提交的内容含有违法违规内容：${errorList}`,
@@ -476,7 +474,7 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
   qList.forEach((q, index) => {
     let flag = false;
     const includesWords = [];
-    [].forEach.call(q, (word) => {
+    [].forEach.call(q, word => {
       if (keywordsList.includes(word)) {
         flag = true;
         includesWords.push(word);
@@ -493,7 +491,7 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
   if (keyError) {
     const errorList = keyErrorList
       .map(
-        (item) =>
+        item =>
           `第${item.index + 1}个内容中，包含：${item.includesWords.join("/")}`,
       )
       .join("，");
@@ -505,7 +503,7 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
   }
 
   // 提交者的基本信息
-  const userList = game.userList.map((item) => item.id.toString());
+  const userList = game.userList.map(item => item.id.toString());
   let index = userList.indexOf(_id.toString());
   if (!isNaN(DEBUG_INDEX)) index = DEBUG_INDEX; // 用于debug
   const L = userList.length;
@@ -518,12 +516,12 @@ router.post("/wx/:id/submit", sessionUser, getGame, async (ctx, next) => {
   if (type !== "等待") {
     // 若为加密阶段
     if (type === "加密") {
-      newBattleData.questions[teamIndex] = battle.map((item) => item.question);
+      newBattleData.questions[teamIndex] = battle.map(item => item.question);
     } else if (type === "解密") {
-      newBattleData.jiemiAnswers[teamIndex] = battle.map((item) => item.answer);
+      newBattleData.jiemiAnswers[teamIndex] = battle.map(item => item.answer);
     } else if (type === "拦截") {
       newBattleData.lanjieAnswers[battleIndex] = battle.map(
-        (item) => item.answer,
+        item => item.answer,
       );
     }
     game.battles[activeBattle] = newBattleData;
@@ -549,9 +547,9 @@ async function updateGameAfterSubmit(activeBattle, newBattleData, game) {
   }
 
   const { codes, jiemiAnswers, questions, lanjieAnswers } = newBattleData;
-  const jiamiFull = questions.every((list) => !judgeEmpty(list));
-  const jiemiFull = jiemiAnswers.every((list) => !judgeEmpty(list));
-  const lanjieFull = lanjieAnswers.every((list) => !judgeEmpty(list));
+  const jiamiFull = questions.every(list => !judgeEmpty(list));
+  const jiemiFull = jiemiAnswers.every(list => !judgeEmpty(list));
+  const lanjieFull = lanjieAnswers.every(list => !judgeEmpty(list));
   // 若为第一轮，不需要拦截
   if (activeBattle === 0 && jiamiFull && jiemiFull) {
     codes.forEach((codes, teamIndex) => {
@@ -702,13 +700,13 @@ function createBattle(lastBattle) {
   const newBattle = lastBattle + 1;
   const desUser = newBattle % 2;
   const desUsers = [desUser, desUser + 2];
-  const jiemiUsers = desUsers.map((desIndex) =>
+  const jiemiUsers = desUsers.map(desIndex =>
     desIndex % 2 === 0 ? desIndex + 1 : desIndex - 1,
   );
   // 第一回合，无拦截
   const lanjieUsers =
     newBattle > 0
-      ? desUsers.map((index) => (index >= 2 ? index - 2 : index + 2))
+      ? desUsers.map(index => (index >= 2 ? index - 2 : index + 2))
       : [-1, -1];
   return {
     desUsers,
@@ -805,8 +803,17 @@ function getCodes() {
 }
 
 async function getWords() {
-  const words = dictionary.shuffle();
-  return [words.slice(0, 4), words.slice(-4)];
+  const words = dictionary;
+  var L = words.length;
+  const result = [];
+  for (var i = 0; i < 8; i++) {
+    var index = ~~(Math.random() * L) + i;
+    result[i] = words[index];
+    words[index] = words[i];
+    L--;
+  }
+
+  return [result.slice(0, 4), result.slice(-4)];
 }
 
 Array.prototype.shuffle = function () {
@@ -833,9 +840,9 @@ async function handleSeasonRank(userList) {
       over: true,
       createdAt: { $gt: startAt },
     }).lean();
-    seasonGames.forEach((game) => {
+    seasonGames.forEach(game => {
       const { userList, battles } = game;
-      const userIndex = userList.map((e) => e.id).indexOf(id);
+      const userIndex = userList.map(e => e.id).indexOf(id);
       const teamIndex = userIndex >= 2 ? 1 : 0;
       const gameResult = handleSum(game);
       const { winner } = gameResult;
