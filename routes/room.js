@@ -45,6 +45,7 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
     random,
     timer,
     relaxMode,
+    owner,
     ownerQuitGame,
     teamMode,
     specialRules,
@@ -60,7 +61,7 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
   const ownRoom = judgeOwnRoomOrNot(roomData, _id);
 
   if (ownerQuitGame) {
-    userList.splice(0, 1);
+    userList = userList.filter(e => e.id !== owner);
   }
 
   const playerFlag =
@@ -210,11 +211,11 @@ router.post("/:id/edituserlist/:index", sessionUser, getRoom, async ctx => {
 
 // 踢出玩家
 router.post(
-  "/:id/edituserlist/delete/:index",
+  "/:id/edituserlist/delete/:playerID",
   sessionUser,
   getRoom,
   async ctx => {
-    const { index } = ctx.params;
+    const { playerID } = ctx.params;
     const { _id } = ctx.state.user;
     let roomData = ctx.state.room;
     const { userList } = roomData;
@@ -222,8 +223,7 @@ router.post(
     if (roomData) {
       const ownRoom = judgeOwnRoomOrNot(roomData, _id);
       if (ownRoom) {
-        userList.splice(index, 1);
-        roomData.userList = userList;
+        roomData.userList = userList.filter(e => e.id !== playerID);
         await Rooms.updateOne(
           {
             _id: roomData._id,
@@ -248,16 +248,13 @@ router.post(
 
 // 房主是否参与游戏
 router.post("/:id/ownerQuitGame", sessionUser, getRoom, async ctx => {
-  const { index } = ctx.params;
   const { _id } = ctx.state.user;
   let roomData = ctx.state.room;
-  const { userList } = roomData;
   const { ownerQuitGame } = ctx.request.body;
 
   if (roomData) {
-    const _userList = userList.map(user => user.id.toString());
-    const userIndex = _userList.indexOf(_id.toString());
-    if (userIndex === 0) {
+    const ownRoom = judgeOwnRoomOrNot(roomData, _id);
+    if (ownRoom) {
       await Rooms.updateOne(
         {
           _id: roomData._id,
