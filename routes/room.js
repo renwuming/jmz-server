@@ -177,8 +177,8 @@ router.post("/:id/quit", sessionUser, getRoom, async (ctx, next) => {
 });
 
 // 调整玩家顺序
-router.post("/:id/edituserlist/:index", sessionUser, getRoom, async ctx => {
-  const { index } = ctx.params;
+router.post("/:id/edituserlist/:playerID", sessionUser, getRoom, async ctx => {
+  const { playerID } = ctx.params;
   const { _id } = ctx.state.user;
   let roomData = ctx.state.room;
   const { userList } = roomData;
@@ -186,8 +186,9 @@ router.post("/:id/edituserlist/:index", sessionUser, getRoom, async ctx => {
   if (roomData) {
     const ownRoom = judgeOwnRoomOrNot(roomData, _id);
     if (ownRoom) {
-      const editUser = userList.splice(index, 1);
-      roomData.userList = [...editUser, ...userList];
+      const others = userList.filter(e => e.id !== playerID);
+      const editUser = userList.find(e => e.id === playerID);
+      roomData.userList = [editUser, ...others];
       await Rooms.updateOne(
         {
           _id: roomData._id,
