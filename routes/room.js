@@ -480,8 +480,8 @@ router.get("/hall/list/:pageNum", sessionUser, async ctx => {
   const Start = pageNum * 10;
   const { user } = ctx.state;
   const { _id } = user;
-  // 2小时以内的房间
-  const DEADLINE = Dayjs().subtract(2, "hour").valueOf();
+  // 3小时以内的房间
+  const DEADLINE = Dayjs().subtract(3, "hour").valueOf();
 
   let roomList = await Rooms.find(
     {
@@ -496,6 +496,7 @@ router.get("/hall/list/:pageNum", sessionUser, async ctx => {
       activeGame: 1,
       userStatus: 1,
       teamMode: 1,
+      gameHistory: 1,
     },
   )
     .skip(Start)
@@ -518,7 +519,7 @@ router.get("/hall/list/:pageNum", sessionUser, async ctx => {
 
   ctx.body = {
     list: roomList,
-    hallTimeRange: "2小时",
+    hallTimeRange: "3小时",
   };
 });
 
@@ -548,6 +549,7 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
       activeGame: 1,
       userStatus: 1,
       teamMode: 1,
+      gameHistory: 1,
     },
   )
     .sort({ timeStamp: -1 })
@@ -610,6 +612,7 @@ async function checkRoomIsOver(roomList) {
       // 游戏结束后，房间不解散
       if (!gameHistory) gameHistory = [];
       gameHistory.push(activeGame);
+
       await Rooms.findOneAndUpdate(
         {
           _id,
