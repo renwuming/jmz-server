@@ -108,7 +108,7 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
       id: newGameId,
     };
     // 5s后去掉保护状态
-    setTimeout(() => {
+    setTimeout(async () => {
       await Rooms.findOneAndUpdate(
         {
           _id: roomData._id,
@@ -119,7 +119,7 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
           },
         },
       );
-    }, 5000)
+    }, 5000);
   } else {
     ctx.body = {
       code: 501,
@@ -498,14 +498,12 @@ router.get("/hall/list/:pageNum", sessionUser, async ctx => {
   // 3小时以内的房间
   const DEADLINE = Dayjs().subtract(3, "hour").valueOf();
 
-  let roomList = await Rooms.find(
-    {
-      publicStatus: true,
-      over: { $ne: true },
-      timeStamp: { $gt: DEADLINE },
-      $where: "this.userList.length > 0",
-    },
-  )
+  let roomList = await Rooms.find({
+    publicStatus: true,
+    over: { $ne: true },
+    timeStamp: { $gt: DEADLINE },
+    $where: "this.userList.length > 0",
+  })
     .skip(Start)
     .limit(10)
     .sort({ timeStamp: -1 })
@@ -545,12 +543,10 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
     .sort({ timeStamp: -1 })
     .lean();
 
-  let roomList = await Rooms.find(
-    {
-      userList: { $elemMatch: { id: userID } },
-      over: { $ne: true },
-    },
-  )
+  let roomList = await Rooms.find({
+    userList: { $elemMatch: { id: userID } },
+    over: { $ne: true },
+  })
     .sort({ timeStamp: -1 })
     .lean();
 
@@ -593,7 +589,7 @@ async function checkRoomIsOver(roomList) {
   for (let i = 0, L = roomList.length; i < L; i++) {
     const room = roomList[i];
     let { activeGame, _id, gameHistory, protected } = room;
-    if(protected) continue;
+    if (protected) continue;
     const game = await Games.findOne({
       _id: activeGame,
     });
