@@ -18,6 +18,7 @@ var productionSchema = new Schema(
     gameHistory: Array, // 历史游戏记录
     owner: String, // 房主的_id
     specialRules: Object, // 特殊规则
+    protected: Boolean, // 保护状态，数据库锁
   },
   {
     timestamps: true,

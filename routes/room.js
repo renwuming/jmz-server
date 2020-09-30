@@ -99,12 +99,27 @@ router.post("/v2/wx/:id/start", sessionUser, getRoom, async (ctx, next) => {
       {
         $set: {
           activeGame: newGameId,
+          // 添加保护状态
+          protected: true,
         },
       },
     );
     ctx.body = {
       id: newGameId,
     };
+    // 5s后去掉保护状态
+    setTimeout(() => {
+      await Rooms.findOneAndUpdate(
+        {
+          _id: roomData._id,
+        },
+        {
+          $set: {
+            protected: false,
+          },
+        },
+      );
+    }, 5000)
   } else {
     ctx.body = {
       code: 501,
@@ -490,14 +505,6 @@ router.get("/hall/list/:pageNum", sessionUser, async ctx => {
       timeStamp: { $gt: DEADLINE },
       $where: "this.userList.length > 0",
     },
-    {
-      timeStamp: 1,
-      userList: 1,
-      activeGame: 1,
-      userStatus: 1,
-      teamMode: 1,
-      gameHistory: 1,
-    },
   )
     .skip(Start)
     .limit(10)
@@ -543,14 +550,6 @@ router.get("/v3/list/:pageNum", sessionUser, async (ctx, next) => {
       userList: { $elemMatch: { id: userID } },
       over: { $ne: true },
     },
-    {
-      timeStamp: 1,
-      userList: 1,
-      activeGame: 1,
-      userStatus: 1,
-      teamMode: 1,
-      gameHistory: 1,
-    },
   )
     .sort({ timeStamp: -1 })
     .lean();
@@ -593,7 +592,8 @@ async function checkRoomIsOver(roomList) {
   const resList = [];
   for (let i = 0, L = roomList.length; i < L; i++) {
     const room = roomList[i];
-    let { activeGame, _id, gameHistory } = room;
+    let { activeGame, _id, gameHistory, protected } = room;
+    if(protected) continue;
     const game = await Games.findOne({
       _id: activeGame,
     });
