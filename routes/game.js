@@ -816,7 +816,7 @@ function getCodes() {
 }
 
 async function getWords() {
-  const words = dictionary;
+  const words = dictionary.concat();
   var L = words.length;
   const result = [];
   for (var i = 0; i < 8; i++) {
