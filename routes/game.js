@@ -823,6 +823,7 @@ async function getWords() {
     var index = ~~(Math.random() * L) + i;
     result[i] = words[index];
     words[index] = words[i];
+    words[i] = result[i];
     L--;
   }
 
