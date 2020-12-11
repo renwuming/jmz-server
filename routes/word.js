@@ -1,5 +1,4 @@
 const router = require("koa-router")();
-const Words = require("../models/word");
 const Codes = require("../models/code");
 const codeCategories = require("../models/codeCategory");
 const { sessionUser, sessionUser_PC, sessionAuditor } = require("./middleware");
@@ -299,5 +298,20 @@ async function handleCode(code) {
     }));
   return code;
 }
+
+router.getWords = async function () {
+  const random4Codes = await Codes.aggregate([
+    {
+      $match: {
+        discarded: { $ne: true }, // 未被丢弃
+        confirm: true,
+      },
+    },
+    { $sample: { size: 8 } }, // 随机取8个
+  ]);
+
+  const list = random4Codes.map(item => item.content);
+  return [list.slice(0, 4), list.slice(-4)];
+};
 
 module.exports = router;

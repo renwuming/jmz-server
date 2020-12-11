@@ -5,7 +5,7 @@ const Seasons = require("../models/seasons");
 const { sessionUser } = require("./middleware");
 const { msgListSecCheck } = require("./wxAuth");
 const { getNewestSeason } = require("./season");
-const dictionary = require("./code");
+const { getWords } = require("./word");
 
 router.prefix("/games");
 
@@ -813,21 +813,6 @@ function getCodes() {
   const del = Math.floor(Math.random() * 4);
   list.splice(del, 1);
   return list.shuffle();
-}
-
-async function getWords() {
-  const words = dictionary.concat();
-  var L = words.length;
-  const result = [];
-  for (var i = 0; i < 8; i++) {
-    var index = ~~(Math.random() * L) + i;
-    result[i] = words[index];
-    words[index] = words[i];
-    words[i] = result[i];
-    L--;
-  }
-
-  return [result.slice(0, 4), result.slice(-4)];
 }
 
 Array.prototype.shuffle = function () {

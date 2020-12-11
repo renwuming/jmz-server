@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "commit": "git-cz",
     "start": "PORT=9995 node bin/www",
     "dev": "./node_modules/.bin/nodemon bin/www",
     "prd": "pm2 start bin/www",
@@ -34,6 +35,7 @@
     "request-promise": "^4.2.5"
   },
   "devDependencies": {
+    "git-cz": "^4.7.5",
     "nodemon": "^1.8.1"
   }
 }
