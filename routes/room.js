@@ -589,7 +589,7 @@ async function checkRoomIsOver(roomList) {
   for (let i = 0, L = roomList.length; i < L; i++) {
     const room = roomList[i];
     let { activeGame, _id, gameHistory, protected } = room;
-    if (protected) {
+    if (protected || !activeGame) {
       resList.push(room);
       continue;
     }
